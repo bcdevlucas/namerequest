@@ -3,19 +3,18 @@ import axios from 'axios'
 import assign from 'object-assign'
 import querystring from 'querystring'
 
-import UrlHelper from 'qc-react/helpers/URL.js'
-import XhrRequestHelper from 'qc-react/helpers/XhrRequest.js'
+import UrlHelper from 'qc-react/helpers/URL'
+import XhrRequestHelper from 'qc-react/helpers/XhrRequest'
 
-import HashProxy from 'qc-react/utils/HashProxy.js'
+import HashProxy from 'qc-react/utils/HashProxy'
 
-import { createCacheStore } from './cache/CacheStore.js'
-import { createCacheAdapter } from './Cache.js'
+import { createCacheAdapter, createCacheStore } from './cache'
 
-import BasicAuthAdapter from './auth/adapters/Basic.js'
-import ApiKeyAuthAdapter from './auth/adapters/ApiKey.js'
-import OAuth2AuthAdapter from './auth/adapters/OAuth2.js'
+import BasicAuthAdapter from './adapters/Basic'
+import ApiKeyAuthAdapter from './adapters/ApiKey'
+import OAuth2AuthAdapter from './adapters/OAuth2'
 
-import { convertToType as _convertToType, constructFromObject as _constructFromObject } from './Utils.js'
+import { convertToType as _convertToType, constructFromObject as _constructFromObject } from './utils'
 
 /**
  * @module ApiClient
@@ -25,126 +24,66 @@ import { convertToType as _convertToType, constructFromObject as _constructFromO
 const cacheStore = createCacheStore()
 const cache = createCacheAdapter(cacheStore)
 
-/**
- * Manages low level client-server communications, parameter marshalling, etc. There should not be any need for an
- * application to use this class directly - the *Api and model classes provide the public API for the service. The
- * contents of this file should be regarded as internal but are documented for completeness.
- * @alias module:ApiClient
- * @class
- */
-class ApiClient {
+interface ApiClient {
+  basePath: string
+  authentications: any
+  authHandlers: any
+}
+
+class BaseClient {
   /**
    * The default API client implementation.
    * @type {module:ApiClient}
    */
   static instance = null
 
-  constructor () {
-    if (ApiClient.instance instanceof ApiClient) return
-
-    /**
-     * The base URL against which to resolve every API call's (relative) path.
-     * @type {String}
-     * @default https://localhost
-     */
-    this.basePath = 'https://localhost'.replace(/\/+$/, '')
-
-    /**
-     * The authentication methods to be included for all API calls.
-     * @type {Array.<String>}
-     */
-    this.authentications = { 'OAuth2': { type: 'oauth2' } }
-
-    /**
-     * A HashProxy of authentication handlers that can be used.
-     */
-    this.authHandlers = new HashProxy()
-
-    /**
-     * The default HTTP headers to be included for all API calls.
-     * @type {Array.<String>}
-     * @default {}
-     */
-    this.defaultHeaders = { 'Access-Control-Allow-Origin': '*' }
-
-    /**
-     * The default HTTP timeout for all API calls.
-     * @type {Number}
-     * @default 60000
-     */
-    this.timeout = 60000
-
-    /**
-     * If set to false an additional timestamp parameter is added to all API GET calls to
-     * prevent browser caching
-     * @type {Boolean}
-     * @default true
-     */
-    this.cache = true
-
-    /**
-     * If set to true, the client will save the cookies from each server
-     * response, and return them in the next request.
-     * @default false
-     */
-    this.enableCookies = false
-
-    /*
-     * Used to save and return cookies in a node.js (non-browser) setting,
-     * if this.enableCookies is set to true.
-     */
-    if (typeof window === 'undefined') {
-      this.handler = axios.create({
-        adapter: cache.adapter,
-        baseURL: this.basePath,
-        timeout: this.timeout,
-        headers: this.defaultHeaders
-      })
-    }
-
-    /*
-     * Allow user to override axios agent
-     */
-    this.requestHandler = null
-
-    ApiClient.instance = this
-  }
+  handler = null
 
   /**
-   * Registers authentication handlers.
-   * @param handlers
+   * The base URL against which to resolve every API call's (relative) path.
+   * @type {String}
+   * @default https://localhost
    */
-  registerAuthHandlers (handlers) {
-    this.authHandlers = new HashProxy(handlers)
-  }
+  basePath = 'https://localhost'.replace(/\/+$/, '')
+  /**
+   * The authentication methods to be included for all API calls.
+   * @type {Array.<String>}
+   */
+  authentications = { 'OAuth2': { type: 'oauth2' } }
 
   /**
-   * Registers an authentication handler.
-   * @param name
-   * @param handler
+   * A HashProxy of authentication handlers that can be used.
    */
-  registerAuthHandler (name, handler) {
-    // if (this.authHandlers instanceof HashProxy) {
-    this.authHandlers[name] = handler
-    // }
-  }
+  authHandlers = new HashProxy()
 
   /**
-   * Set the default authentication handler to use.
-   * @deprecated
-   * @param handler
+   * The default HTTP headers to be included for all API calls.
+   * @type {Array.<String>}
+   * @default {}
    */
-  setCurrentAuthHandler (handler) {
-    this.authHandler = handler
-  }
+  defaultHeaders = { 'Access-Control-Allow-Origin': '*' }
 
   /**
-   * @returns {*}
+   * The default HTTP timeout for all API calls.
+   * @type {Number}
+   * @default 60000
    */
-  authenticate (authType) {
-    this.setCurrentAuthHandler(this.authHandlers[authType])
-    return this.authHandler.authenticate()
-  }
+  timeout = 60000
+
+  /**
+   * If set to false an additional timestamp parameter is added to all API GET calls to
+   * prevent browser caching
+   * @type {Boolean}
+   * @default true
+   */
+  cache = true
+
+  /**
+   * If set to true, the client will save the cookies from each server
+   * response, and return them in the next request.
+   * @default false
+   */
+  enableCookies = false
 
   /**
    * This functionality has been delegated to the OAuth2AuthAdapter.
@@ -185,6 +124,82 @@ class ApiClient {
     // TODO: This is the old skool quickcommerce check
     // let authTokens = this.doLoginCheck()
     // return (authTokens) ? this.getToken() : false
+  }
+}
+
+/**
+ * Manages low level client-server communications, parameter marshalling, etc. There should not be any need for an
+ * application to use this class directly - the *Api and model classes provide the public API for the service. The
+ * contents of this file should be regarded as internal but are documented for completeness.
+ * @alias module:ApiClient
+ * @class
+ */
+class Client extends BaseClient implements ApiClient {
+  /**
+   * The default API client implementation.
+   * @type {module:ApiClient}
+   */
+  static instance = null
+
+  /**
+   * Allows user to override axios agent.
+   */
+  requestHandler = null
+
+  constructor () {
+    super()
+
+    if (Client.instance instanceof Client) return
+    /*
+     * Used to save and return cookies in a node.js (non-browser) setting,
+     * if this.enableCookies is set to true.
+     */
+    if (typeof window === 'undefined') {
+      this.handler = axios.create({
+        adapter: cache.adapter,
+        baseURL: this.basePath,
+        timeout: this.timeout,
+        headers: this.defaultHeaders
+      })
+    }
+
+    Client.instance = this
+  }
+
+  /**
+   * Registers authentication handlers.
+   * @param handlers
+   */
+  registerAuthHandlers (handlers) {
+    this.authHandlers = new HashProxy(handlers)
+  }
+
+  /**
+   * Registers an authentication handler.
+   * @param name
+   * @param handler
+   */
+  registerAuthHandler (name, handler) {
+    // if (this.authHandlers instanceof HashProxy) {
+    this.authHandlers[name] = handler
+    // }
+  }
+
+  /**
+   * Set the default authentication handler to use.
+   * @deprecated
+   * @param handler
+   */
+  setCurrentAuthHandler (handler) {
+    this.authHandler = handler
+  }
+
+  /**
+   * @returns {*}
+   */
+  authenticate (authType) {
+    this.setCurrentAuthHandler(this.authHandlers[authType])
+    return this.authHandler.authenticate()
   }
 
   /**
@@ -306,10 +321,10 @@ class ApiClient {
     let contentType = XhrRequestHelper.jsonPreferredMime(contentTypes)
     if (contentType) {
       if (contentType !== 'multipart/form-data') {
-        requestConfig.headers = assign(requestConfig.headers, { 'Content-Type': contentType })
+        requestConfig.headers = Object.assign(requestConfig.headers, { 'Content-Type': contentType })
       }
     } else if (typeof requestConfig.headers['Content-Type'] === 'undefined') {
-      requestConfig.headers = assign(requestConfig.headers, { 'Content-Type': 'application/json;charset=UTF-8' })
+      requestConfig.headers = Object.assign(requestConfig.headers, { 'Content-Type': 'application/json;charset=UTF-8' })
     }
 
     if (contentType === 'application/x-www-form-urlencoded') {
@@ -372,7 +387,7 @@ class ApiClient {
           }
 
           // Update the request config
-          let updatedConfig = assign({}, config)
+          let updatedConfig = Object.assign({}, config)
           // Re-apply authentications
           that.applyAuthToRequest(updatedConfig, authNames)
           return Promise.resolve(updatedConfig)
@@ -383,7 +398,7 @@ class ApiClient {
           }
 
           if (err instanceof Error) {
-            ApiClient.handleError(err, onError, err.message)
+            Client.handleError(err, onError, err.message)
           }
         })
       }
@@ -398,7 +413,7 @@ class ApiClient {
         // requestConfig.responseType('string')
       }
 
-      ApiClient.handleResponse(response, onSuccess, onError)
+      Client.handleResponse(response, onSuccess, onError)
 
       // Attach previously saved cookies, if enabled
       /* if (this.enableCookies) {
@@ -409,7 +424,7 @@ class ApiClient {
        }
        } */
     }).catch(err => {
-      ApiClient.handleError(err, onError, err.message)
+      Client.handleError(err, onError, err.message)
     })
 
     return requestConfig
@@ -422,12 +437,6 @@ class ApiClient {
    * @param legacy
    */
   static handleResponse (response, onSuccess, onError, legacy = false) {
-    // TODO: Legacy flag provides a quick and dirty escape hatch until I create response adapters
-    if (legacy) {
-      ApiClient.handleLegacyResponse(response, onSuccess, onError)
-      return
-    }
-
     // 200 OK, 201 Created
     if (response.success || response.status === 200 || response.status === 201 || response.status === 204) {
       if (response.hasOwnProperty('data')) {
@@ -443,34 +452,7 @@ class ApiClient {
       return
     }
 
-    ApiClient.handleApiError(response, onError)
-  }
-
-  /**
-   * @param response
-   * @param onSuccess
-   * @param onError
-   */
-  static handleLegacyResponse (response, onSuccess, onError) {
-    if (response.success || response.status === 200 || response.status === 201 || response.status === 204) {
-      if (response.hasOwnProperty('data') && response.data.hasOwnProperty('data')) {
-        if (typeof onSuccess === 'function') {
-          onSuccess(response.data.data)
-        }
-      } else if (response.hasOwnProperty('data')) {
-        if (typeof onSuccess === 'function') {
-          onSuccess(response.data)
-        }
-      } else {
-        if (typeof onSuccess === 'function') {
-          onSuccess()
-        }
-      }
-
-      return
-    }
-
-    ApiClient.handleApiError(response, onError)
+    Client.handleApiError(response, onError)
   }
 
   /**
@@ -496,52 +478,6 @@ class ApiClient {
       onError()
     }
   }
-
-  /**
-   * Deserializes an HTTP response body into a value of the specified type.
-   * @param {Object} response An Axios response object.
-   * @param {(String|Array.<String>|Object.<String, Object>|Function)} returnType The type to return. Pass a string for simple types
-   * or the constructor function for a complex type. Pass an array containing the type name to return an array of that type. To
-   * return an object, pass an object with one property whose name is the key type and whose value is the corresponding value type:
-   * all properties on <code>data<code> will be converted to this type.
-   * @returns A value of the specified type.
-   */
-  static deserialize (response, returnType) {
-    if (response === null || returnType === null || response.status === 204) {
-      return null
-    }
-
-    // Rely on Axios for parsing response body
-    let data = response.body
-    if (data === null || (typeof data === 'object' && typeof data.length === 'undefined' && !Object.keys(data).length)) {
-      // Axios does not always produce a body, so use the unparsed response as a fallback
-      data = response.text
-    }
-
-    return ApiClient.convertToType(data, returnType)
-  }
-
-  /**
-   * Converts a value to the specified type.
-   * @param {(String|Object)} data The data to convert, as a string or object.
-   * @param {(String|Array.<String>|Object.<String, Object>|Function)} type The type to return. Pass a string for simple types
-   * or the constructor function for a complex type. Pass an array containing the type name to return an array of that type. To
-   * return an object, pass an object with one property whose name is the key type and whose value is the corresponding value type:
-   * all properties on <code>data<code> will be converted to this type.
-   * @returns An instance of the specified type or null or undefined if data is null or undefined.
-   */
-  static convertToType (data, type) {
-    return _convertToType(data, type)
-  }
-
-  /**
-   * Constructs a new map or array model from REST data.
-   * @param data {Object|Array} The REST data.
-   * @param obj {Object|Array} The target object or array.
-   */
-  static constructFromObject (data, obj, itemType) {
-    return _constructFromObject(data, obj, itemType)
-  }
 }
 
-export default ApiClient
+export default Client

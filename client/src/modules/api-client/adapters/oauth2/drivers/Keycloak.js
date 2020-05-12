@@ -72,7 +72,7 @@ class OAuth2KeycloakDriver {
   }
 
   updateStoredTokens () {
-    let keycloakTokens = assign({}, DEFAULT_TOKENS, {
+    let keycloakTokens = Object.assign({}, DEFAULT_TOKENS, {
       token: this.keycloak.token,
       // access: this.keycloak.token,
       refreshToken: this.keycloak.refreshToken
@@ -99,7 +99,7 @@ class OAuth2KeycloakDriver {
    * @returns {any}
    */
   getStoredTokens () {
-    let sessionTokens = assign({}, DEFAULT_TOKENS)
+    let sessionTokens = Object.assign({}, DEFAULT_TOKENS)
 
     if (sessionStorage.hasOwnProperty(TOKEN_SESSION_VAR)) {
       sessionTokens.token = sessionStorage.getItem(TOKEN_SESSION_VAR)

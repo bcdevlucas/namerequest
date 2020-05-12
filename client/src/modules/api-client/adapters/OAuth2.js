@@ -16,8 +16,6 @@ class OAuth2AuthAdapter {
   applyAuthToRequest (authConfig, requestConfig) {
     let authHeaders = null
 
-    // TODO: This first condition looks like it was previously used for a baked-in OAuth key or an API key
-    // Don't remove it just yet, it doesn't hurt to leave it here, which gives me some context on how it was used
     if (authConfig.accessToken) {
       authHeaders = { 'Authorization': 'Bearer ' + authConfig.accessToken }
     } else {
