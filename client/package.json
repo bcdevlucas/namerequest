@@ -13,9 +13,12 @@
   },
   "dependencies": {
     "axios": "^0.19.0",
+    "axios-cache-adapter": "^2.5.0",
     "babel-plugin-transform-decorators": "^6.24.1",
     "core-js": "^3.3.2",
     "keycloak-js": "^9.0.3",
+    "localforage": "^1.7.3",
+    "localforage-memoryStorageDriver": "^0.9.2",
     "material-design-icons-iconfont": "^5.0.1",
     "node-sass": "^4.13.1",
     "remove-accents": "^0.4.2",

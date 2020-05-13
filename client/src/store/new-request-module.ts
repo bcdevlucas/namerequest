@@ -1,4 +1,4 @@
-import Axios from '@/plugins/axios'
+import Axios from '@/modules/axios'
 import axios from 'axios'
 import removeAccents from 'remove-accents'
 import designations from './list-data/designations'

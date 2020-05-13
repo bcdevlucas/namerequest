@@ -38,7 +38,7 @@
 </template>
 
 <script lang="ts">
-import Axios from '@/plugins/axios'
+import Axios from '@/modules/axios'
 import { Component, Vue } from 'vue-property-decorator'
 
 @Component({})
