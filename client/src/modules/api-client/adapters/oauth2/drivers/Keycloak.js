@@ -10,6 +10,8 @@ const TOKEN_SESSION_VAR = 'keycloak_token'
 const REFRESH_TOKEN_SESSION_VAR = 'keycloak_refreshToken'
 // const REFRESH_TOKEN_SESSION_PARSED_VAR = 'keycloak_refreshTokenParsed'
 
+// TODO: Optionally use cookies instead of session storage!
+
 class OAuth2KeycloakDriver {
   constructor (keycloak) {
     this.keycloak = (keycloak instanceof Keycloak) ? keycloak : new Keycloak(keycloak)

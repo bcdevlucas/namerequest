@@ -40,8 +40,8 @@ class Axios extends Client {
   }
 
   protected configureRequest (config) {
-    let { axiosConfig, authNames } = config as ApiClientConfig
-    const { method, url, headers } = axiosConfig as AxiosRequestConfig
+    let { axiosConfig = {}, authNames = [] } = config as ApiClientConfig
+    const { method = undefined, url = undefined, headers = undefined } = axiosConfig as AxiosRequestConfig
 
     let requestConfig: AxiosRequestConfig = Object.assign({
       adapter: cache.adapter,
@@ -64,7 +64,7 @@ class Axios extends Client {
     // TODO: We may have to move this out... or use request.eject when we're done...
     this.instance.interceptors.request.use(async config => {
       // If the authHandler implements refreshTokenIfExpired, invoke it
-      if (typeof this.authHandler.refreshTokenIfExpired === 'function') {
+      if (this.authHandler && typeof this.authHandler.refreshTokenIfExpired === 'function') {
         let token = await this.authHandler.refreshTokenIfExpired()
 
         if (token.refreshed) {
@@ -78,35 +78,46 @@ class Axios extends Client {
         let updatedConfig = Object.assign({}, config)
         // Re-apply authentications
         this.applyAuthToRequest(updatedConfig, authNames)
-
-        return config
       }
+
+      return config
     })
 
     return requestConfig
   }
 
-  get (url, config: ApiClientConfig = {}): Promise<AxiosResponse<any>> {
-    const axiosConfig = this.configureRequest(config)
-    return this.instance.get(url, axiosConfig)
+  async get (url, config: ApiClientConfig = {}): Promise<AxiosResponse<any>> {
+    try {
+      const axiosConfig = this.configureRequest(config)
+      const response = await this.instance.get(url, axiosConfig)
+      return response
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.log(e)
+    }
   }
 
-  post (url, config: ApiClientConfig = {}): Promise<AxiosResponse<any>> {
+  async post (url, config: ApiClientConfig = {}): Promise<AxiosResponse<any>> {
     const axiosConfig = this.configureRequest(config)
-    return this.instance.post(url, axiosConfig)
+    const response = await this.instance.post(url, axiosConfig)
+    return response
   }
 
-  put (url, config: ApiClientConfig = {}): Promise<AxiosResponse<any>> {
+  async put (url, config: ApiClientConfig = {}): Promise<AxiosResponse<any>> {
     const axiosConfig = this.configureRequest(config)
-    return this.instance.put(url, axiosConfig)
+    const response = await this.instance.put(url, axiosConfig)
+    return response
   }
 
-  delete (url, config: ApiClientConfig = {}): Promise<AxiosResponse<any>> {
+  async delete (url, config: ApiClientConfig = {}): Promise<AxiosResponse<any>> {
     const axiosConfig = this.configureRequest(config)
-    return this.instance.delete(url, axiosConfig)
+    const response = await this.instance.delete(url, axiosConfig)
+    return response
   }
 }
 
+// TODO: Pull base URL as well as the API version from env vars
+//  Make those vars configurable in OpenShift if necessary
 const configuredAxiosInstance = new Axios({
   baseURL: baseURL() + '/api/v1'
 })
