@@ -98,7 +98,7 @@ class Axios extends Client {
   post (url, config?): Promise<AxiosResponse<any>> {
     let { axiosConfig, authNames } = config as ApiClientConfig
 
-    axiosConfig = this.configureRequest(axiosConfig)
+    axiosConfig = this.configureRequest(config)
 
     return this.instance.post(url, axiosConfig)
   }
@@ -106,7 +106,7 @@ class Axios extends Client {
   put (url, config?): Promise<AxiosResponse<any>> {
     let { axiosConfig, authNames } = config as ApiClientConfig
 
-    axiosConfig = this.configureRequest(axiosConfig)
+    axiosConfig = this.configureRequest(config)
 
     return this.instance.put(url, axiosConfig)
   }
@@ -114,7 +114,7 @@ class Axios extends Client {
   delete (url, config?): Promise<AxiosResponse<any>> {
     let { axiosConfig, authNames } = config as ApiClientConfig
 
-    axiosConfig = this.configureRequest(axiosConfig)
+    axiosConfig = this.configureRequest(config)
 
     return this.instance.delete(url, axiosConfig)
   }
