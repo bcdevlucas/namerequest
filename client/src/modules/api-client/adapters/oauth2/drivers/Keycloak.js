@@ -24,6 +24,11 @@ class OAuth2KeycloakDriver {
     let storedTokens = this.getStoredTokens()
 
     try {
+      /* this.keycloak.init({
+        onLoad: 'check-sso',
+        flow: 'hybrid'
+      }) */
+
       let authenticated = await this.keycloak
         .init({
           onLoad: 'login-required',

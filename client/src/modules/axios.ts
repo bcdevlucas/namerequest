@@ -5,6 +5,7 @@ import { createCacheAdapter, createCacheStore } from './api-client/cache'
 
 import { Client, ApiClientConfig } from './api-client/client'
 
+// This is just for testing
 let keycloakConfig = {
   "realm": "master",
   // "url": "https://sso-dev.pathfinder.gov.bc.ca/auth",
@@ -36,11 +37,6 @@ class Axios extends Client {
 
     this.keycloak = Keycloak(keycloakConfig)
     this.instance = axios.create(config)
-
-    /* this.keycloak.init({
-      onLoad: 'check-sso',
-      flow: 'hybrid'
-    }) */
   }
 
   protected configureRequest (config) {
@@ -50,13 +46,14 @@ class Axios extends Client {
     let requestConfig: AxiosRequestConfig = Object.assign({
       adapter: cache.adapter,
       baseURL: url,
-      // method: httpMethod,
-      headers: headers // TODO: Add default headers
+      method: method,
+      // TODO: Add default headers
+      headers: headers
     }, axiosConfig)
 
     // Set requestHandler if it has been overridden
     if (this.requestHandler) {
-      // todo: http or https?
+      // TODO: http or https?
       requestConfig.httpAgent = this.requestHandler
       requestConfig.httpsAgent = this.requestHandler
     }
@@ -64,7 +61,7 @@ class Axios extends Client {
     // Set request timeout
     requestConfig.timeout = this.timeout
 
-    // TODO: We may have to move this out
+    // TODO: We may have to move this out... or use request.eject when we're done...
     this.instance.interceptors.request.use(async config => {
       // If the authHandler implements refreshTokenIfExpired, invoke it
       if (typeof this.authHandler.refreshTokenIfExpired === 'function') {
