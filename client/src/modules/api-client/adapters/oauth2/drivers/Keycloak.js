@@ -1,7 +1,5 @@
 import Keycloak from 'keycloak-js'
 
-import assign from 'object-assign'
-
 const DEFAULT_TOKENS = {
   token: '',
   refreshToken: ''
@@ -17,23 +15,16 @@ class OAuth2KeycloakDriver {
     this.keycloak = (keycloak instanceof Keycloak) ? keycloak : new Keycloak(keycloak)
   }
 
-  /**
-   * @returns {Promise<any>}
-   */
-  authenticate () {
-    return this.initialize().then(() => {
-      this.updateStoredTokens()
-    })
+  async authenticate () {
+    await this.initialize()
+    this.updateStoredTokens()
   }
 
-  /**
-   * @returns {Promise<any>}
-   */
-  initialize () {
-    return new Promise((resolve, reject) => {
-      let storedTokens = this.getStoredTokens()
+  async initialize () {
+    let storedTokens = this.getStoredTokens()
 
-      this.keycloak
+    try {
+      let authenticated = await this.keycloak
         .init({
           onLoad: 'login-required',
           checkLoginIframe: false,
@@ -41,63 +32,88 @@ class OAuth2KeycloakDriver {
           token: storedTokens.token,
           refreshToken: storedTokens.refreshToken
         })
-        .then((authenticated) => {
-          if (authenticated) {
-            this.updateStoredTokens()
-            console.log('Keycloak has authenticated')
 
-            resolve({
-              adapter: this.keycloak,
-              token: this.keycloak.token,
-              refreshToken: this.keycloak.refreshToken,
-              idToken: this.keycloak.idToken
-            })
-          }
+      if (authenticated) {
+        this.updateStoredTokens()
+        // eslint-disable-next-line no-console
+        console.log('Keycloak has authenticated')
 
-          reject()
-        })
-        .catch((error) => {
-          console.log('Keycloak failed to authenticate')
-          console.log(error)
+        return {
+          adapter: this.keycloak,
+          token: this.keycloak.token,
+          refreshToken: this.keycloak.refreshToken,
+          idToken: this.keycloak.idToken
+        }
+      }
 
-          reject({
-            adapter: this.keycloak,
-            token: this.keycloak.token,
-            refreshToken: this.keycloak.refreshToken,
-            idToken: this.keycloak.idToken,
-            error: true
-          })
-        })
-    })
-  }
+      // eslint-disable-next-line no-console
+      console.log('Keycloak failed to authenticate')
 
-  updateStoredTokens () {
-    let keycloakTokens = Object.assign({}, DEFAULT_TOKENS, {
-      token: this.keycloak.token,
-      // access: this.keycloak.token,
-      refreshToken: this.keycloak.refreshToken
-    })
+      return {
+        adapter: this.keycloak,
+        token: this.keycloak.token,
+        refreshToken: this.keycloak.refreshToken,
+        idToken: this.keycloak.idToken,
+        error: true
+      }
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.log('Keycloak failed to authenticate due to an error')
+      // eslint-disable-next-line no-console
+      console.log(e)
 
-    this.setStoredTokens(keycloakTokens)
-  }
-
-  /**
-   * @param keycloakTokens
-   */
-  setStoredTokens (keycloakTokens) {
-    keycloakTokens = keycloakTokens || DEFAULT_TOKENS
-    if (keycloakTokens.hasOwnProperty('token') && typeof keycloakTokens.token === 'string') {
-      sessionStorage.setItem(TOKEN_SESSION_VAR, keycloakTokens.token)
-    }
-
-    if (keycloakTokens.hasOwnProperty('refreshToken') && typeof keycloakTokens.refreshToken === 'string') {
-      sessionStorage.setItem(REFRESH_TOKEN_SESSION_VAR, keycloakTokens.refreshToken)
+      return {
+        adapter: this.keycloak,
+        token: this.keycloak.token,
+        refreshToken: this.keycloak.refreshToken,
+        idToken: this.keycloak.idToken,
+        error: true
+      }
     }
   }
 
   /**
-   * @returns {any}
+   * @returns {Promise<{
+   * adapter: Keycloak | Keycloak.KeycloakInstance | *,
+   * refreshed: boolean,
+   * idToken: string,
+   * timestamp: Date,
+   * token: string,
+   * refreshToken: string}|{adapter: Keycloak | Keycloak.KeycloakInstance | *,
+   * refreshed: boolean,
+   * idToken: string,
+   * error: boolean,
+   * token: string, refreshToken: string}>}
    */
+  async refreshTokenIfExpired () {
+    try {
+      const refreshed = await this.keycloak.updateToken(5)
+      if (refreshed) {
+        this.updateStoredTokens()
+      }
+
+      return {
+        timestamp: new Date(),
+        adapter: this.keycloak,
+        token: this.keycloak.token,
+        refreshToken: this.keycloak.refreshToken,
+        idToken: this.keycloak.idToken,
+        refreshed: refreshed
+      }
+    } catch (e) {
+      // console.log(e)
+      await this.keycloak.login()
+      return {
+        adapter: this.keycloak,
+        token: this.keycloak.token,
+        refreshToken: this.keycloak.refreshToken,
+        idToken: this.keycloak.idToken,
+        refreshed: false,
+        error: true
+      }
+    }
+  }
+
   getStoredTokens () {
     let sessionTokens = Object.assign({}, DEFAULT_TOKENS)
 
@@ -112,9 +128,27 @@ class OAuth2KeycloakDriver {
     return sessionTokens
   }
 
-  /**
-   * @returns {any}
-   */
+  setStoredTokens (keycloakTokens) {
+    keycloakTokens = keycloakTokens || DEFAULT_TOKENS
+    if (keycloakTokens.hasOwnProperty('token') && typeof keycloakTokens.token === 'string') {
+      sessionStorage.setItem(TOKEN_SESSION_VAR, keycloakTokens.token)
+    }
+
+    if (keycloakTokens.hasOwnProperty('refreshToken') && typeof keycloakTokens.refreshToken === 'string') {
+      sessionStorage.setItem(REFRESH_TOKEN_SESSION_VAR, keycloakTokens.refreshToken)
+    }
+  }
+
+  updateStoredTokens () {
+    let keycloakTokens = Object.assign({}, DEFAULT_TOKENS, {
+      token: this.keycloak.token,
+      // access: this.keycloak.token,
+      refreshToken: this.keycloak.refreshToken
+    })
+
+    this.setStoredTokens(keycloakTokens)
+  }
+
   getParsedActiveSessionTokens () {
     return {
       token: this.keycloak.idTokenParsed,
@@ -130,41 +164,6 @@ class OAuth2KeycloakDriver {
     if (sessionStorage.hasOwnProperty(REFRESH_TOKEN_SESSION_VAR)) {
       sessionStorage.removeItem(REFRESH_TOKEN_SESSION_VAR)
     }
-  }
-
-  /**
-   * @returns {bluebird|*}
-   */
-  refreshTokenIfExpired () {
-    return new Promise((resolve, reject) => {
-      this.keycloak.updateToken(5)
-        .then((refreshed) => {
-          if (refreshed) {
-            this.updateStoredTokens()
-          }
-
-          resolve({
-            timestamp: new Date(),
-            adapter: this.keycloak,
-            token: this.keycloak.token,
-            refreshToken: this.keycloak.refreshToken,
-            idToken: this.keycloak.idToken,
-            refreshed: refreshed
-          })
-        })
-        .catch(() => {
-          this.keycloak.login()
-
-          reject({
-            adapter: this.keycloak,
-            token: this.keycloak.token,
-            refreshToken: this.keycloak.refreshToken,
-            idToken: this.keycloak.idToken,
-            refreshed: false,
-            error: true
-          })
-        })
-    })
   }
 }
 

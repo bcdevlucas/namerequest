@@ -175,6 +175,7 @@ class BaseClient implements ApiClient {
     this.authHandlers[name] = handler
     // }
   }
+
   /**
    * Set the default authentication handler to use.
    * @param handler
@@ -183,9 +184,6 @@ class BaseClient implements ApiClient {
     this.authHandler = handler
   }
 
-  /**
-   * @returns {*}
-   */
   authenticate (authType) {
     this.setCurrentAuthHandler(this.authHandlers[authType])
     return this.authHandler.authenticate()

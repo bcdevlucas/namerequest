@@ -64,29 +64,26 @@ class Axios extends Client {
     // Set request timeout
     requestConfig.timeout = this.timeout
 
-    this.instance.interceptors.request.use(config => {
-      return new Promise((resolve, reject) => {
-        // If the authHandler implements refreshTokenIfExpired, invoke it
-        if (typeof this.authHandler.refreshTokenIfExpired === 'function') {
-          return this.authHandler.refreshTokenIfExpired()
-            .then((debugInfo) => {
-              if (debugInfo.refreshed) {
-                // eslint-disable-next-line no-console
-                console.log('Keycloak token was successfully refreshed - logging token info')
-                // eslint-disable-next-line no-console
-                console.log(debugInfo)
-              }
+    // TODO: We may have to move this out
+    this.instance.interceptors.request.use(async config => {
+      // If the authHandler implements refreshTokenIfExpired, invoke it
+      if (typeof this.authHandler.refreshTokenIfExpired === 'function') {
+        let token = await this.authHandler.refreshTokenIfExpired()
 
-              // Update the request config
-              let updatedConfig = Object.assign({}, config)
-              // Re-apply authentications
-              this.applyAuthToRequest(updatedConfig, authNames)
-
-              // config.headers.Authorization = 'Bearer ' + this.keycloak.token
-              // resolve(config)
-            })
+        if (token.refreshed) {
+          // eslint-disable-next-line no-console
+          console.log('Keycloak token was successfully refreshed - logging token info')
+          // eslint-disable-next-line no-console
+          console.log(token)
         }
-      })
+
+        // Update the request config
+        let updatedConfig = Object.assign({}, config)
+        // Re-apply authentications
+        this.applyAuthToRequest(updatedConfig, authNames)
+
+        return config
+      }
     })
 
     return requestConfig

@@ -3,9 +3,6 @@ class OAuth2AuthAdapter {
     this.driver = driver
   }
 
-  /**
-   * @returns {Promise<any>}
-   */
   authenticate () {
     return this.driver.authenticate()
   }
