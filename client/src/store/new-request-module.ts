@@ -537,8 +537,11 @@ export class NewRequestModule extends VuexModule {
 
     try {
       resp = await Axios.get('/name-analysis', {
-        params,
-        cancelToken: source.token
+        axiosConfig: {
+          params,
+          cancelToken: source.token
+        },
+        authNames: ['OAuth2']
       })
     } catch (error) {
       this.mutateDisplayedComponent('Tabs')

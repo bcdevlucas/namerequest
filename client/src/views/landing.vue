@@ -18,13 +18,13 @@
 </template>
 
 <script lang="ts">
-import AnalyzePending from '@/components/new-request/analyze-pending'
-import AnalyzeResults from '@/components/new-request/analyze-results'
-import LowerContainer from '@/components/lower-info-area/lower-container'
+import AnalyzePending from '@/components/new-request/analyze-pending.vue'
+import AnalyzeResults from '@/components/new-request/analyze-results.vue'
+import LowerContainer from '@/components/lower-info-area/lower-container.vue'
 import SubmissionTabs from '@/components/new-request/submit-request/submission-tabs.vue'
 import newReqModule from '@/store/new-request-module'
-import Stats from '@/components/new-request/stats'
-import Tabs from '@/components/tabs'
+import Stats from '@/components/new-request/stats.vue'
+import Tabs from '@/components/tabs.vue'
 import { Component, Vue } from 'vue-property-decorator'
 
 @Component({

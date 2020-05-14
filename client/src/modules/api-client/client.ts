@@ -1,6 +1,6 @@
-import axios from 'axios'
+import axios, { AxiosRequestConfig } from 'axios'
 
-import { HashProxy } from './utils.js'
+import { HashProxy } from './utils'
 
 import { createCacheAdapter, createCacheStore } from './cache'
 
@@ -16,7 +16,12 @@ import OAuth2AuthAdapter from './adapters/OAuth2'
 const cacheStore = createCacheStore()
 const cache = createCacheAdapter(cacheStore)
 
-interface ApiClient {
+export interface ApiClientConfig {
+  axiosConfig?: AxiosRequestConfig,
+  authNames?: string[]
+}
+
+export interface ApiClient {
   basePath: string
   authentications: any
   authHandlers: any
@@ -276,4 +281,4 @@ class Client extends BaseClient implements ApiClient {
   }
 }
 
-export default Client
+export { Client }
