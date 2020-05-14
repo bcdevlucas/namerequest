@@ -90,32 +90,22 @@ class Axios extends Client {
   }
 
   get (url, config: ApiClientConfig = {}): Promise<AxiosResponse<any>> {
-    let axiosConfig = this.configureRequest(config)
-
+    const axiosConfig = this.configureRequest(config)
     return this.instance.get(url, axiosConfig)
   }
 
-  post (url, config?): Promise<AxiosResponse<any>> {
-    let { axiosConfig, authNames } = config as ApiClientConfig
-
-    axiosConfig = this.configureRequest(config)
-
+  post (url, config: ApiClientConfig = {}): Promise<AxiosResponse<any>> {
+    const axiosConfig = this.configureRequest(config)
     return this.instance.post(url, axiosConfig)
   }
 
-  put (url, config?): Promise<AxiosResponse<any>> {
-    let { axiosConfig, authNames } = config as ApiClientConfig
-
-    axiosConfig = this.configureRequest(config)
-
+  put (url, config: ApiClientConfig = {}): Promise<AxiosResponse<any>> {
+    const axiosConfig = this.configureRequest(config)
     return this.instance.put(url, axiosConfig)
   }
 
-  delete (url, config?): Promise<AxiosResponse<any>> {
-    let { axiosConfig, authNames } = config as ApiClientConfig
-
-    axiosConfig = this.configureRequest(config)
-
+  delete (url, config: ApiClientConfig = {}): Promise<AxiosResponse<any>> {
+    const axiosConfig = this.configureRequest(config)
     return this.instance.delete(url, axiosConfig)
   }
 }
