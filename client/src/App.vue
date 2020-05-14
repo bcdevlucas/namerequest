@@ -22,10 +22,18 @@ import PickRequestType from '@/components/modals/pick-request-type.vue'
 import { Component, Vue, Ref } from 'vue-property-decorator'
 import Header from '@/components/header.vue'
 
+import Axios from './modules/axios'
+
 @Component({
   components: { LocationInfoModal, NrNotRequired, HelpMeChoose, PickEntity, PickRequestType, Header }
 })
-export default class App extends Vue {}
+export default class App extends Vue {
+  constructor () {
+    super()
+
+    Axios.getAccessToken()
+  }
+}
 
 </script>
 
