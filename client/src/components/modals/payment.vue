@@ -198,7 +198,9 @@ export default class PaymentModal extends Vue {
       `${document.baseURI}/?paymentSuccess=true&paymentId=${paymentId}`
     )
 
+    // TODO: Lucas, we need to make this configurable in OpenShift!
     const paymentPortalUrl = `https://dev.bcregistry.ca/business/auth/makepayment/${paymentId}/${redirectUrl}`
+    // const paymentPortalUrl = `https://test.bcregistry.ca/business/auth/makepayment/${paymentId}/${redirectUrl}`
     window.location.href = paymentPortalUrl
   }
 

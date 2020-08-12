@@ -1085,7 +1085,8 @@ export class NewRequestModule extends VuexModule {
     try {
       let nr = this.editNameReservation
       let { nrNum } = this.nr
-      nrNum = nrNum.replace(/(?:\s+|\s|)(\D|\D+|)(?:\s+|\s|)(\d+)(?:\s+|\s|)/, 'NR' + '$2')
+      // Use the NR_REGEX const in existing-request-search if you really want to do this
+      // nrNum = nrNum.replace(/(?:\s+|\s|)(\D|\D+|)(?:\s+|\s|)(\d+)(?:\s+|\s|)/, 'NR' + '$2')
 
       let response = await axios.patch(`/namerequests/${nrNum}/edit`, nr, {
         headers: {
@@ -1571,6 +1572,15 @@ export class NewRequestModule extends VuexModule {
       }
     }
     this.entityType = this.nr.entity_type_cd
+    /* if (this.nr.entity_type_cd.startsWith('X')) {
+      if (this.nr.applicants.countryTypeCd === 'CA') {
+        this.location = 'CA'
+      } else {
+        this.location = 'IN'
+      }
+    } else {
+      this.location = 'BC'
+    } */
   }
   @Mutation
   resetApplicantDetails () {
