@@ -1572,15 +1572,6 @@ export class NewRequestModule extends VuexModule {
       }
     }
     this.entityType = this.nr.entity_type_cd
-    /* if (this.nr.entity_type_cd.startsWith('X')) {
-      if (this.nr.applicants.countryTypeCd === 'CA') {
-        this.location = 'CA'
-      } else {
-        this.location = 'IN'
-      }
-    } else {
-      this.location = 'BC'
-    } */
   }
   @Mutation
   resetApplicantDetails () {
