@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<WebElementEntity>
+   <description></description>
+   <name>div_NAMESAuto-Approved Today No Wait Time D_535872</name>
+   <tag></tag>
+   <elementGuidId>76f4c352-96be-46f4-a6d4-4e2223b37d1b</elementGuidId>
+   <selectorCollection>
+      <entry>
+         <key>XPATH</key>
+         <value>//div[@id='app']/div</value>
+      </entry>
+   </selectorCollection>
+   <selectorMethod>XPATH</selectorMethod>
+   <useRalativeImagePath>false</useRalativeImagePath>
+   <webElementProperties>
+      <isSelected>false</isSelected>
+      <matchCondition>equals</matchCondition>
+      <name>tag</name>
+      <type>Main</type>
+      <value>div</value>
+   </webElementProperties>
+   <webElementProperties>
+      <isSelected>false</isSelected>
+      <matchCondition>equals</matchCondition>
+      <name>class</name>
+      <type>Main</type>
+      <value>v-application--wrap</value>
+   </webElementProperties>
+   <webElementProperties>
+      <isSelected>true</isSelected>
+      <matchCondition>equals</matchCondition>
+      <name>text</name>
+      <type>Main</type>
+      <value>—NAMESAuto-Approved Today No Wait Time —DAYS Priority Request Wait Time —DAYS Standard Request Wait Time  Name Request New Name SearchExisting Name RequestI need a name to:Help Me ChooseStart a Newarrow_drop_downBCarrow_drop_downCorporationarrow_drop_downsearchcheck_box_outline_blankThe name is a person's namecheck_boxThe name is EnglishCheck to see if you need to file a a name requestTop 10 Words Approved This Week Try to stand out, choose a name that isn't widely used Name 1Name 2Name 3Name 4Name 5Name 6Name 7Name 8Name 9Name 10Avoid Certain Words Name approvals can be delayed or declined if they contain popular words, words that require consent, words that are trademarked or otherwise cannot be used. Lorem ipsum dolor sit amet to make this longer. Learn MoreHow to Build Your Name Content to come from Lorna will go here. Your name must contain 3 important components. First, it must have a Distinctive element lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. See the examples here to learn more about creating a unique name for your new business.​​ This will be a small copy block talking about creating a unique element for your name.  This will be a small copy block explaining how you need this second part of your business name. refresh See another name example Helpful TipsTRADE MARKS Stay away from protected names and trade marks.  Search Canadian trade marked nameslaunchDOMAIN NAMES Before selecting your business name, considering checking available website domain names. SOCIAL MEDIA Search social media sites to see which usernames may be available for your business. Need More Information?To learn more about BC Names Request Online, please visit the BC Government HomepageContact Us For support or questions about this application contact us at: Toll Free: 1-877-526-1526Phone: 250 952-0568Email: SBC_ITOperationsSupport@gov.bc.caHours of OperationMonday to Friday, 8:30am - 4:30pm PSTHome|Disclaimer|Privacy|Accessibility|Copyright</value>
+   </webElementProperties>
+   <webElementProperties>
+      <isSelected>false</isSelected>
+      <matchCondition>equals</matchCondition>
+      <name>xpath</name>
+      <type>Main</type>
+      <value>id(&quot;app&quot;)/div[@class=&quot;v-application--wrap&quot;]</value>
+   </webElementProperties>
+   <webElementXpaths>
+      <isSelected>true</isSelected>
+      <matchCondition>equals</matchCondition>
+      <name>xpath:idRelative</name>
+      <type>Main</type>
+      <value>//div[@id='app']/div</value>
+   </webElementXpaths>
+   <webElementXpaths>
+      <isSelected>false</isSelected>
+      <matchCondition>equals</matchCondition>
+      <name>xpath:position</name>
+      <type>Main</type>
+      <value>//div/div</value>
+   </webElementXpaths>
+</WebElementEntity>
