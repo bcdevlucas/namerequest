@@ -24,12 +24,24 @@
 import Invoice from '@/components/invoice.vue'
 
 import paymentModule from '@/modules/payment'
+import { PaymentResponseI } from '@/modules/payment/services/models'
 import newRequestModule, { NewRequestModule } from '@/store/new-request-module'
 
 import * as paymentService from '@/modules/payment/services'
 import * as paymentTypes from '@/modules/payment/store/types'
 
 import { Component, Prop, Vue, Watch } from 'vue-property-decorator'
+
+/**
+ * Makes debugging the receipt easier.
+ * Usage:
+ * Set to true and complete a name reservation.
+ * The session information for the payment won't be cleared
+ * which activates the receipt modal.
+ *
+ * Make sure this is set to false when you're done!
+ */
+const DEBUG_RECEIPT = true
 
 @Component({
   components: {
@@ -49,7 +61,7 @@ export default class ReceiptModal extends Vue {
     // TODO: Set the timer here!
     if (sessionPaymentId) {
       // TODO: Remember to clear the session when we're done building this out
-      this.fetchData(true)
+      this.fetchData(!DEBUG_RECEIPT)
         .then(() => this.completePayment(sessionPaymentId))
     }
   }
@@ -75,7 +87,7 @@ export default class ReceiptModal extends Vue {
     const {
       businessInfo = { businessName: null, businessIdentifier: null }, filingInfo = { date: null }
     } = paymentRequest
-    await this.fetchData(true)
+    await this.fetchData(!DEBUG_RECEIPT)
 
     const data = {
       // 'corpType': businessInfo.corpType,
@@ -135,10 +147,16 @@ export default class ReceiptModal extends Vue {
   async fetchData (clearSession: boolean = true) {
     const { sessionPaymentId, sessionNrNum } = this
 
+    // TODO: We need to make sure we get the correct NR number here? Or somewhere soon...
+
     if (clearSession) {
+      // TODO: Remove this one, we don't want to set the payment to session once we're done!
+      // TODO: Or... we could add a debug payments mode?
+      sessionStorage.removeItem('payment')
       // Clear the sessionStorage variables
       sessionStorage.removeItem('paymentInProgress')
       sessionStorage.removeItem('paymentId')
+      sessionStorage.removeItem('paymentToken')
       sessionStorage.removeItem('nrNum')
     }
 
@@ -146,27 +164,40 @@ export default class ReceiptModal extends Vue {
       // Get the payment
       await this.fetchNr(sessionNrNum)
       // Get the payment
-      await this.fetchPayment(sessionPaymentId)
+      await this.fetchNrPayment(sessionNrNum, sessionPaymentId)
     }
   }
 
-  async fetchPayment (paymentId) {
-    const response = await paymentService.getPayment(paymentId, {})
+  async fetchNrPayment (nrNum, paymentId) {
+    const response = await paymentService.getNameRequestPayment(nrNum, paymentId, {})
 
-    const payment = response.data
-    const { invoices = [] } = response.data
+    const paymentResponse: PaymentResponseI = response.data
+    // TODO: Display an error modal HERE if no payment response!
+    const { payment, sbcPayment = { invoices: [] }, token, statusCode, completionDate } = paymentResponse
+
     await paymentModule.setPayment(payment)
-    await paymentModule.setPaymentInvoice(invoices[0])
+    await paymentModule.setPaymentInvoice(sbcPayment.invoices[0])
+
+    // TODO: Display an error modal HERE if no payment response!
   }
 
   async fetchNr (nrNum) {
     await newRequestModule.getNameReservation(nrNum)
+
+    // TODO: Display an error modal HERE if no NR response!
   }
 
   async completePayment (paymentId) {
     const { nrNum } = this
-    await newRequestModule.completePayment(nrNum, paymentId, {})
-    paymentModule.toggleReceiptModal(true)
+    // TODO: In completePayment, generate a temp UUID that gets passed to the NR Payment API
+    //  If it is not present in the response...
+    const result = await newRequestModule.completePayment(nrNum, paymentId, {})
+    if (result.paymentSuccess) {
+      // TODO: Cancel the NR using the /rollback endpoint
+      paymentModule.toggleReceiptModal(true)
+    } else {
+      // Display an error modal
+    }
   }
 
   /**

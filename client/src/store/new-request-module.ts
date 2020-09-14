@@ -71,6 +71,13 @@ let debouncedCheckCOLIN: any
 
 interface RequestNameMapI extends RequestNameI {}
 
+interface PaymentResponse {
+  payment?: any
+  paymentSuccess: boolean
+  paymentErrors?: any[]
+  statusCode?: string
+}
+
 @Module({ dynamic: true, namespaced: false, store, name: 'newRequestModule' })
 export class NewRequestModule extends VuexModule {
   actingOnOwnBehalf: boolean = true
@@ -1239,9 +1246,9 @@ export class NewRequestModule extends VuexModule {
       const { data } = response
       const { names } = data
 
+      this.resetApplicantDetails()
       this.setNrResponse(data)
       this.updateReservationNames(names)
-      this.resetApplicantDetails()
     } catch (error) {
       // eslint-disable-next-line
       console.log(error)
@@ -1321,15 +1328,6 @@ export class NewRequestModule extends VuexModule {
       })
 
       this.setNrResponse(response.data)
-
-      const { nr } = this
-      const { applicants = [] } = nr
-
-      if (applicants instanceof Array) {
-        this.setApplicantDetails(applicants[0])
-      } else if (applicants) {
-        this.setApplicantDetails(applicants)
-      }
     } catch (error) {
       // eslint-disable-next-line
       console.log(error)
@@ -1366,22 +1364,17 @@ export class NewRequestModule extends VuexModule {
       })
 
       this.setNrResponse(response.data)
-
-      const { nr } = this
-      const { applicants = [] } = nr
-
-      if (applicants instanceof Array) {
-        this.setApplicantDetails(applicants[0])
-      } else if (applicants) {
-        this.setApplicantDetails(applicants)
-      }
     } catch (error) {
       // eslint-disable-next-line
       console.log(error)
     }
   }
   @Action
-  async completePayment (nrNum) {
+  async completePayment (nrNum): Promise<PaymentResponse> {
+    const paymentResponse: PaymentResponse = {
+      paymentSuccess: false
+    }
+
     try {
       const response = await axios.put(`/namerequests/${nrNum}/complete-payment`, {}, {
         headers: {
@@ -1389,19 +1382,35 @@ export class NewRequestModule extends VuexModule {
         }
       })
 
-      this.setNrResponse(response.data)
-
-      const { nr } = this
-      const { applicants = [] } = nr
-
-      if (applicants instanceof Array) {
-        this.setApplicantDetails(applicants[0])
-      } else if (applicants) {
-        this.setApplicantDetails(applicants)
-      }
+      paymentResponse.payment = response.data
+      return paymentResponse
     } catch (error) {
       // eslint-disable-next-line
-      console.log(error)
+      throw new Error('Error completing payment')
+    }
+  }
+  @Action
+  async rollbackNameRequest (nrNum, action): Promise<any> {
+    const ROLLBACK_ACTIONS = {
+      CANCEL: 'cancel',
+      RESTORE: 'restore',
+      ROLLBACK_PAYMENT: 'rollback-payment'
+    }
+
+    try {
+      const validRollbackActions = [
+        ROLLBACK_ACTIONS.CANCEL
+      ]
+
+      if (validRollbackActions.indexOf(action) === -1) return
+      const response = await axios.put(`/namerequests/${nrNum}/rollback/${action}`, {}, {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
+    } catch (error) {
+      // eslint-disable-next-line
+      throw new Error('Error rolling back Name Request')
     }
   }
   @Action
@@ -1879,13 +1888,6 @@ export class NewRequestModule extends VuexModule {
     }
   }
   @Mutation
-  setApplicantDetails (applicant) {
-    const data = Object.assign({}, applicant) as ApplicantI
-    Object.keys(data as ApplicantI).forEach(key => {
-      this.applicant[key] = data[key]
-    })
-  }
-  @Mutation
   setErrors (value: string) {
     if (Array.isArray(this.errors) && this.errors.length > 0) {
       this.errors = this.errors.concat(value)
@@ -1896,7 +1898,24 @@ export class NewRequestModule extends VuexModule {
   @Mutation
   setNrResponse (value) {
     this.nr = value
+
+    const { nr } = this
+    const { applicants = [] } = nr
+
+    const setApplicantDetails = (applicant) => {
+      const data = Object.assign({}, applicant) as ApplicantI
+      Object.keys(data as ApplicantI).forEach(key => {
+        this.applicant[key] = data[key]
+      })
+    }
+
+    if (applicants instanceof Array) {
+      setApplicantDetails(applicants[0])
+    } else if (applicants) {
+      setApplicantDetails(applicants)
+    }
   }
+
   @Mutation
   updateReservationNames (nrName: [] = []) {
     const { nameChoices } = this

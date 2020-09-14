@@ -72,6 +72,7 @@
 import FeeSummary from '@/components/fee-summary.vue'
 
 import paymentModule from '@/modules/payment'
+import { PaymentResponseI } from '@/modules/payment/services/models'
 import newRequestModule, { NewRequestModule } from '@/store/new-request-module'
 
 import * as paymentService from '@/modules/payment/services'
@@ -132,13 +133,10 @@ export default class PaymentModal extends Vue {
 
   async createPayment () {
     // Grab the applicant info from state
-    const corpType = 'NRO' // We may need to handle more than one type at some point?
     const methodOfPayment = 'CC' // We may need to handle more than one type at some point?
 
-    const { applicant, name, filingType, priorityRequest, nrData, nr } = this
+    const { filingType, priorityRequest, nr } = this
 
-    const { addrLine1, addrLine2, city, stateProvinceCd, countryTypeCd, postalCd } = applicant
-    const { corpNum } = nrData
     const { nrNum } = nr
 
     if (!nrNum) {
@@ -147,32 +145,19 @@ export default class PaymentModal extends Vue {
       return
     }
 
+    // This is the minimum required to make a payment!
+    // Any additional data supplied here, eg. supplying
+    // a businessInfo object, will override values found
+    // in the corresponding Name Request
     const req = {
       paymentInfo: {
         methodOfPayment: methodOfPayment
       },
-      businessInfo: {
-        corpType: corpType,
-        // TODO: Replace this with the NR Number? Or is this the actual business number?
-        // TODO: Do they even have a business number at this point?
-        businessIdentifier: corpNum || nrNum,
-        businessName: name,
-        contactInfo: {
-          addressLine1: `${addrLine1} ${addrLine2}`,
-          city: city,
-          province: stateProvinceCd,
-          country: countryTypeCd,
-          postalCode: postalCd
-        }
-      },
-      // This info comes from the frontend
       filingInfo: {
-        date: new Date().toJSON().slice(0, 10), // Today's date
         filingTypes: [
           {
             filingTypeCode: filingType,
-            priority: priorityRequest || false,
-            filingDescription: `${filingType}: ${name} (${corpNum})`
+            priority: priorityRequest || false
           }
         ]
       }
@@ -180,25 +165,38 @@ export default class PaymentModal extends Vue {
 
     const response = await paymentService.createPaymentRequest(nrNum, req)
 
-    const { invoices = [] } = response.data
+    const paymentResponse: PaymentResponseI = response.data
+    // TODO: Display an error modal HERE if no payment response!
+    const { payment, sbcPayment = { invoices: [] }, token, statusCode, completionDate } = paymentResponse
 
-    await paymentModule.setPayment(response.data)
-    await paymentModule.setPaymentInvoice(invoices[0])
+    await paymentModule.setPayment(payment)
+    await paymentModule.setPaymentInvoice(sbcPayment.invoices[0])
     await paymentModule.setPaymentRequest(req)
 
     // Grab the new payment ID
     const { paymentId } = this
+
+    // TODO: Remove this one, we don't want to set the payment to session once we're done!
+    // TODO: Or... we could add a debug payments mode?
+    sessionStorage.setItem('payment', `${JSON.stringify(payment)}`)
     // Store the payment ID to sessionStorage, that way we can start the user back where we left off
     sessionStorage.setItem('paymentInProgress', 'true')
     sessionStorage.setItem('paymentId', `${paymentId}`)
+    sessionStorage.setItem('paymentToken', `${token}`)
     sessionStorage.setItem('nrNum', `${nrNum}`)
 
     // Redirect user to Service BC Pay Portal
+    // Set the redirect URL to specify OUR payment ID so we can
+    // grab the payment when we're directed back to our application
     const redirectUrl = encodeURIComponent(
-      `${document.baseURI}/?paymentSuccess=true&paymentId=${paymentId}`
+      `${document.baseURI}/?paymentId=${paymentId}`
     )
 
-    const paymentPortalUrl = `${this.$PAYMENT_PORTAL_URL}/${paymentId}/${redirectUrl}`
+    // eslint-disable-next-line no-console
+    console.log(`Forwarding to SBC Payment Portal -> Payment redirect URL: ${redirectUrl}`)
+
+    // TODO: We could make this string configurable too... not necessary at this time
+    const paymentPortalUrl = `${this.$PAYMENT_PORTAL_URL}/${token}/${redirectUrl}`
     window.location.href = paymentPortalUrl
   }
 
