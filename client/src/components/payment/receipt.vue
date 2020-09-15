@@ -204,11 +204,13 @@ export default class ReceiptModal extends Vue {
     const { nrId } = this
 
     const result: NameRequestPayment = await newRequestModule.completePayment(nrId, paymentId, {})
-    const paymentSuccess = false // result.paymentSuccess
+    const paymentSuccess = result.paymentSuccess
+
     // TODO: Remove this when done implementing tests
+    /* const paymentSuccess = false
     result.paymentErrors = [
       { id: 'payment-error', error: 'Something went wrong with the payment, cancelling the Name Request!' }
-    ]
+    ] */
 
     if (paymentSuccess) {
       paymentModule.toggleReceiptModal(true)
