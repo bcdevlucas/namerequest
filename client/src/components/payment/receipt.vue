@@ -34,7 +34,8 @@ import * as paymentService from '@/modules/payment/services'
 import * as paymentTypes from '@/modules/payment/store/types'
 
 import { Component, Prop, Vue, Watch } from 'vue-property-decorator'
-import message from "@/components/common/error/message.vue"
+// TODO: Finish the message component
+// import message from "@/components/common/error/message.vue"
 
 /**
  * Makes debugging the receipt easier.
@@ -119,10 +120,8 @@ export default class ReceiptModal extends Vue {
     return nr
   }
 
-  get nrNum () {
-    const { nr } = this
-    const { nrNum } = nr
-    return nrNum || undefined
+  get nrId () {
+    return newRequestModule.nrId
   }
 
   get paymentRequest () {
@@ -139,9 +138,9 @@ export default class ReceiptModal extends Vue {
       : undefined
   }
 
-  get sessionNrNum () {
-    return (this.paymentInProgress && sessionStorage.getItem('nrNum'))
-      ? sessionStorage.getItem('nrNum')
+  get sessionNrId () {
+    return (this.paymentInProgress && sessionStorage.getItem('nrId'))
+      ? sessionStorage.getItem('nrId')
       : undefined
   }
 
@@ -158,7 +157,7 @@ export default class ReceiptModal extends Vue {
   }
 
   async fetchData (clearSession: boolean = true) {
-    const { sessionPaymentId, sessionNrNum } = this
+    const { sessionPaymentId, sessionNrId } = this
 
     // TODO: We need to make sure we get the correct NR number here? Or somewhere soon...
     if (clearSession) {
@@ -169,20 +168,20 @@ export default class ReceiptModal extends Vue {
       sessionStorage.removeItem('paymentInProgress')
       sessionStorage.removeItem('paymentId')
       sessionStorage.removeItem('paymentToken')
-      sessionStorage.removeItem('nrNum')
+      sessionStorage.removeItem('nrId')
     }
 
-    if (sessionNrNum && sessionPaymentId) {
+    if (sessionNrId && sessionPaymentId) {
       // Get the payment
-      await this.fetchNr(sessionNrNum)
+      await this.fetchNr(sessionNrId)
       // Get the payment
-      await this.fetchNrPayment(sessionNrNum, sessionPaymentId)
+      await this.fetchNrPayment(sessionNrId, sessionPaymentId)
     }
   }
 
-  async fetchNrPayment (nrNum, paymentId) {
+  async fetchNrPayment (nrId, paymentId) {
     try {
-      const paymentResponse: NameRequestPaymentResponse = await paymentService.getNameRequestPayment(nrNum, paymentId, {})
+      const paymentResponse: NameRequestPaymentResponse = await paymentService.getNameRequestPayment(nrId, paymentId, {})
       const { payment, sbcPayment = { invoices: [] }, token, statusCode, completionDate } = paymentResponse
 
       await paymentModule.setPayment(payment)
@@ -196,15 +195,15 @@ export default class ReceiptModal extends Vue {
     }
   }
 
-  async fetchNr (nrNum) {
-    await newRequestModule.getNameReservation(nrNum)
+  async fetchNr (nrId) {
+    await newRequestModule.getNameReservation(nrId)
     // TODO: Display an error modal HERE if no NR response!
   }
 
   async completePayment (paymentId) {
-    const { nrNum } = this
+    const { nrId } = this
 
-    const result: NameRequestPayment = await newRequestModule.completePayment(nrNum, paymentId, {})
+    const result: NameRequestPayment = await newRequestModule.completePayment(nrId, paymentId, {})
     const paymentSuccess = false // result.paymentSuccess
     // TODO: Remove this when done implementing tests
     result.paymentErrors = [
@@ -217,7 +216,7 @@ export default class ReceiptModal extends Vue {
       // Setting the errors to state will update any subscribing components, like the main ErrorModal
       await errorModule.setAppErrors(result.paymentErrors)
       // Cancel the NR using the rollback endpoint
-      await newRequestModule.rollbackNameRequest({ nrNum, action: rollbackActions.CANCEL })
+      await newRequestModule.rollbackNameRequest({ nrId, action: rollbackActions.CANCEL })
     }
   }
 

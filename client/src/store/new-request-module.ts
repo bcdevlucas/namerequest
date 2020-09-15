@@ -728,6 +728,14 @@ export class NewRequestModule extends VuexModule {
     }
     return false
   }
+  get nrId () {
+    const { nr } = this
+    let nrId
+    if (nr) {
+      nrId = nr.id
+    }
+    return nrId
+  }
   get nrNum () {
     const { nr } = this
     let nrNum
@@ -1236,10 +1244,10 @@ export class NewRequestModule extends VuexModule {
     }
   }
   @Action
-  async getNameReservation (nrNum) {
+  async getNameReservation (nrId) {
     let response
     try {
-      response = await axios.get(`/namerequests/${nrNum}`, {
+      response = await axios.get(`/namerequests/${nrId}`, {
         headers: {
           'Content-Type': 'application/json'
         }
@@ -1270,11 +1278,11 @@ export class NewRequestModule extends VuexModule {
   async patchNameRequests () {
     try {
       let nr = this.editNameReservation
-      let { nrNum } = this.nr
+      let { nrId } = this
       // Use the NR_REGEX const in existing-request-search if you really want to do this
       // nrNum = nrNum.replace(/(?:\s+|\s|)(\D|\D+|)(?:\s+|\s|)(\d+)(?:\s+|\s|)/, 'NR' + '$2')
 
-      let response = await axios.patch(`/namerequests/${nrNum}/edit`, nr, {
+      let response = await axios.patch(`/namerequests/${nrId}/edit`, nr, {
         headers: {
           'Content-Type': 'application/json'
         }
@@ -1289,7 +1297,8 @@ export class NewRequestModule extends VuexModule {
   @Action
   async patchNameRequestsByAction (action) {
     try {
-      let response = await axios.patch(`/namerequests/${this.nr.nrNum}/${action}`, {}, {
+      const { nrId } = this
+      let response = await axios.patch(`/namerequests/${nrId}/${action}`, {}, {
         headers: {
           'Content-Type': 'application/json'
         }
@@ -1336,7 +1345,7 @@ export class NewRequestModule extends VuexModule {
     }
   }
   @Action
-  async putNameReservation (nrNum) {
+  async putNameReservation (nrId) {
     let { nrState } = this
     if (this.isAssumedName) nrState = 'ASSUMED'
     let response
@@ -1359,7 +1368,7 @@ export class NewRequestModule extends VuexModule {
       if (this.showCorpNum && this.corpNum) {
         data['corpNum'] = this.corpNum
       }
-      response = await axios.put(`/namerequests/${nrNum}`, data, {
+      response = await axios.put(`/namerequests/${nrId}`, data, {
         headers: {
           'Content-Type': 'application/json'
         }
@@ -1372,7 +1381,7 @@ export class NewRequestModule extends VuexModule {
     }
   }
   @Action
-  async completePayment (nrNum): Promise<NameRequestPayment> {
+  async completePayment (nrId): Promise<NameRequestPayment> {
     // TODO: In completePayment, generate a temp UUID or nonce
     //  that gets passed to the NR Payment API
     const paymentResponse: NameRequestPayment = {
@@ -1380,7 +1389,7 @@ export class NewRequestModule extends VuexModule {
     }
 
     try {
-      const response = await axios.put(`/namerequests/${nrNum}/complete-payment`, {}, {
+      const response = await axios.put(`/namerequests/${nrId}/complete-payment`, {}, {
         headers: {
           'Content-Type': 'application/json'
         }
@@ -1402,14 +1411,14 @@ export class NewRequestModule extends VuexModule {
     }
   }
   @Action
-  async rollbackNameRequest ({ nrNum, action }): Promise<any> {
+  async rollbackNameRequest ({ nrId, action }): Promise<any> {
     try {
       const validRollbackActions = [
         ROLLBACK_ACTIONS.CANCEL
       ]
 
       if (validRollbackActions.indexOf(action) === -1) return
-      const response = await axios.patch(`/namerequests/${nrNum}/rollback/${action}`, {}, {
+      const response = await axios.patch(`/namerequests/${nrId}/rollback/${action}`, {}, {
         headers: {
           'Content-Type': 'application/json'
         }

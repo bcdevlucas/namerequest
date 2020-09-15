@@ -1,5 +1,4 @@
 import axios, { AxiosResponse, AxiosRequestConfig } from 'axios'
-import store from '@/store/new-request-module'
 
 import {
   NameRequestPayment, NameRequestPaymentResponse
@@ -7,8 +6,8 @@ import {
 
 export class ApiError extends Error {}
 
-export async function createPaymentRequest (nrNumber, data): Promise<NameRequestPaymentResponse> {
-  const url = `/payments/${nrNumber}`
+export async function createPaymentRequest (nrId, data): Promise<NameRequestPaymentResponse> {
+  const url = `/payments/${nrId}`
   const response = await axios.post(url, data)
 
   if (response.status !== 201) {
@@ -18,8 +17,8 @@ export async function createPaymentRequest (nrNumber, data): Promise<NameRequest
   return response.data
 }
 
-export async function getNameRequestPayment (nrNum, paymentId, params): Promise<NameRequestPaymentResponse> {
-  const url = `/payments/${nrNum}/payment/${paymentId}`
+export async function getNameRequestPayment (nrId, paymentId, params): Promise<NameRequestPaymentResponse> {
+  const url = `/payments/${nrId}/payment/${paymentId}`
   const response = await axios.get(url, params)
 
   if (response.status !== 200) {

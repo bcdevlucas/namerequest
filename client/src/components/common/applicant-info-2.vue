@@ -167,13 +167,14 @@ export default class ApplicantInfo2 extends Vue {
     const nr: Partial<any> = nameRequest.nr || {}
     return nr
   }
-  get nrData () {
-    return newReqModule.nrData
+  get nrId () {
+    return newReqModule.nrId
   }
   get nrNum () {
-    const { nr } = this
-    const { nrNum } = nr
-    return nrNum || undefined
+    return newReqModule.nrNum
+  }
+  get nrData () {
+    return newReqModule.nrData
   }
   get nrState () {
     return newReqModule.nrState
@@ -208,27 +209,16 @@ export default class ApplicantInfo2 extends Vue {
 
   async submit () {
     if (this.editMode) {
-      newReqModule.patchNameRequests()
-      return
+      await newReqModule.patchNameRequests()
     } else {
-      const { nrNum } = this
-      if (!nrNum) {
-        // eslint-disable-next-line
-        console.log('!nrNum 216 applicant-info-2')
+      const { nrId } = this
+      if (!nrId) {
         await newReqModule.postNameRequests('draft')
       } else {
-        // eslint-disable-next-line
-        console.log('inner else 216 applicant-info-2')
-        await newReqModule.putNameReservation(nrNum)
+        await newReqModule.putNameReservation(nrId)
       }
-      // eslint-disable-next-line
-      console.log('outer else 224 appliocant-info-2')
+
       await paymentModule.togglePaymentModal(true)
-    }
-  }
-  clearValidation () {
-    if (this.$refs.step2 as Vue) {
-      (this.$refs.step2 as any).resetValidation()
     }
   }
   async getCorpNum (num) {
@@ -237,6 +227,11 @@ export default class ApplicantInfo2 extends Vue {
       this.resp = resp
     } catch (error) {
       this.resp = null
+    }
+  }
+  clearValidation () {
+    if (this.$refs.step2 as Vue) {
+      (this.$refs.step2 as any).resetValidation()
     }
   }
   mutateApplicant (key, value) {

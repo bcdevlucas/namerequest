@@ -83,12 +83,12 @@ import * as jurisdictions from '@/modules/payment/jurisdictions'
 
 import {
   ApplicantI
-} from "@/models"
+} from '@/models'
 
 import { Component, Prop, Vue, Watch } from 'vue-property-decorator'
-import {ApiError as PaymentApiError} from "@/modules/payment/services"
-import errorModule from "@/modules/error"
-import {ErrorI} from "@/modules/error/store/actions"
+import { ApiError as PaymentApiError } from '@/modules/payment/services'
+import errorModule from '@/modules/error'
+import { ErrorI } from '@/modules/error/store/actions'
 
 @Component({
   components: {
@@ -138,13 +138,11 @@ export default class PaymentModal extends Vue {
     // Grab the applicant info from state
     const methodOfPayment = 'CC' // We may need to handle more than one type at some point?
 
-    const { filingType, priorityRequest, nr } = this
+    const { filingType, priorityRequest, nrId } = this
 
-    const { nrNum } = nr
-
-    if (!nrNum) {
+    if (!nrId) {
       // eslint-disable-next-line no-console
-      console.warn('NR number is not present in NR, cannot continue!')
+      console.warn('NR ID is not present in NR, cannot continue!')
       return
     }
 
@@ -167,7 +165,7 @@ export default class PaymentModal extends Vue {
     }
 
     try {
-      const paymentResponse: NameRequestPaymentResponse = await paymentService.createPaymentRequest(nrNum, req)
+      const paymentResponse: NameRequestPaymentResponse = await paymentService.createPaymentRequest(nrId, req)
       const { payment, sbcPayment = { invoices: [] }, token, statusCode, completionDate } = paymentResponse
 
       await paymentModule.setPayment(payment)
@@ -184,7 +182,7 @@ export default class PaymentModal extends Vue {
       sessionStorage.setItem('paymentInProgress', 'true')
       sessionStorage.setItem('paymentId', `${paymentId}`)
       sessionStorage.setItem('paymentToken', `${token}`)
-      sessionStorage.setItem('nrNum', `${nrNum}`)
+      sessionStorage.setItem('nrId', `${nrId}`)
 
       // Redirect user to Service BC Pay Portal
       // Set the redirect URL to specify OUR payment ID so we can
@@ -310,6 +308,10 @@ export default class PaymentModal extends Vue {
     const nameRequest: NewRequestModule = newRequestModule
     const nr: Partial<any> = nameRequest.nr || {}
     return nr
+  }
+
+  get nrId () {
+    return newRequestModule.nrId
   }
 
   get priorityRequest () {
