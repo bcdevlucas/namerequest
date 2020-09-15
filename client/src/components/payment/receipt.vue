@@ -42,7 +42,7 @@ import { Component, Prop, Vue, Watch } from 'vue-property-decorator'
  *
  * Make sure this is set to false when you're done!
  */
-const DEBUG_RECEIPT = true
+const DEBUG_RECEIPT = false
 
 @Component({
   components: {
@@ -201,13 +201,11 @@ export default class ReceiptModal extends Vue {
     const { nrNum } = this
 
     const result: NameRequestPayment = await newRequestModule.completePayment(nrNum, paymentId, {})
-
-    // TODO: This is just for testing take it out!
-    const paymentSuccess = false // result.paymentSuccess
-    // eslint-disable-next-line no-constant-condition
-    result.paymentErrors = [
+    const paymentSuccess = result.paymentSuccess
+    // TODO: Remove this when done implementing tests
+    /* result.paymentErrors = [
       { id: 'payment-error', error: 'Something went wrong with the payment, cancelling the Name Request!' }
-    ]
+    ] */
 
     if (paymentSuccess) {
       paymentModule.toggleReceiptModal(true)
