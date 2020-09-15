@@ -3,13 +3,13 @@ import * as types from './types'
 import { STATE_KEY } from '../store'
 
 export default {
+  // TODO: Remove this doesn't appear to work...
   [types.HAS_ERRORS]: (state): boolean => {
-    return state[STATE_KEY] && state[STATE_KEY].length > 0
+    return state[STATE_KEY].length > 0
   },
   [types.GET_ERROR]: (state, errorId: string) => {
-    return (state[STATE_KEY].has(errorId))
-      ? state[STATE_KEY].get(errorId)
-      : undefined
+    const error = state[STATE_KEY].find((item) => item.id === errorId)
+    return error || undefined
   },
   [types.GET_ERRORS]: (state) => {
     return state[STATE_KEY]

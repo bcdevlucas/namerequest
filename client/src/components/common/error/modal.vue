@@ -3,11 +3,13 @@
     <v-card class="pa-6">
       <v-card-text class="h3">Error</v-card-text>
       <v-card-text class="copy-normal">
-        {{ JSON.stringify(errors) }}
+        <ul v-if="hasErrors" style="list-style-type: none; margin: 0; padding: 0">
+          <li :key="error.id" v-for="error in errors">{{ error.error }}</li>
+        </ul>
       </v-card-text>
       <v-card-actions>
         <v-spacer></v-spacer>
-        <v-btn text @click="showModal = false">Close</v-btn>
+        <v-btn text @click="hideModal()">Close</v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
@@ -17,6 +19,7 @@
 import errorModule from '@/modules/error'
 import { ErrorI } from '@/modules/error/store/actions'
 import * as errorTypes from '@/modules/error/store/types'
+// import * as errorActions from '@/modules/error/store/actions'
 
 import { Component, Vue } from 'vue-property-decorator'
 
@@ -24,16 +27,19 @@ import { Component, Vue } from 'vue-property-decorator'
 })
 export default class ErrorModal extends Vue {
   get showModal () {
-    return !!(errorModule[errorTypes.HAS_ERRORS])
+    return errorModule[errorTypes.HAS_ERRORS]
   }
-  set showModal (value: boolean) {
-    // errorModule.mutateErrorModalVisible(value)
+
+  async hideModal () {
+    await errorModule.clearAppErrors()
+  }
+
+  get hasErrors (): ErrorI[] {
+    return errorModule[errorTypes.HAS_ERRORS]
   }
 
   get errors (): ErrorI[] {
-    return (errorModule[errorTypes.HAS_ERRORS] !== false)
-      ? errorModule[errorTypes.GET_ERRORS]
-      : [] as ErrorI[]
+    return errorModule[errorTypes.GET_ERRORS]
   }
 }
 

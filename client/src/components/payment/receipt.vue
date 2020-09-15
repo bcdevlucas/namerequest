@@ -42,7 +42,7 @@ import { Component, Prop, Vue, Watch } from 'vue-property-decorator'
  *
  * Make sure this is set to false when you're done!
  */
-const DEBUG_RECEIPT = false
+const DEBUG_RECEIPT = true
 
 @Component({
   components: {
@@ -203,13 +203,17 @@ export default class ReceiptModal extends Vue {
     const result: NameRequestPayment = await newRequestModule.completePayment(nrNum, paymentId, {})
 
     // TODO: This is just for testing take it out!
-    // if (result.paymentSuccess === true) {
+    const paymentSuccess = false // result.paymentSuccess
     // eslint-disable-next-line no-constant-condition
-    if (false) {
+    result.paymentErrors = [
+      { id: 'payment-error', error: 'Something went wrong with the payment, cancelling the Name Request!' }
+    ]
+
+    if (paymentSuccess) {
       paymentModule.toggleReceiptModal(true)
-    } else if (result.paymentSuccess === false && result.paymentErrors) {
+    } else if (!paymentSuccess && result.paymentErrors) {
       // Setting the errors to state will update any subscribing components, like the main ErrorModal
-      await errorModule.setErrors(result.paymentErrors)
+      await errorModule.setAppErrors(result.paymentErrors)
       // Cancel the NR using the rollback endpoint
       await newRequestModule.rollbackNameRequest(nrNum, rollbackActions.CANCEL)
     }

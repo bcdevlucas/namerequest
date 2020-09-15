@@ -5,18 +5,18 @@ export interface ErrorI {
   error: any
 }
 
-export const setError = ({ commit }, error: ErrorI) => {
+export const setAppError = ({ commit }, error: ErrorI) => {
   commit(types.SET_ERROR, error)
 }
 
-export const setErrors = ({ commit }, errors: ErrorI[]) => {
+export const setAppErrors = ({ commit }, errors: ErrorI[]) => {
   commit(types.SET_ERRORS, errors)
 }
 
-export const clearError = ({ commit }, id: string) => {
+export const clearAppError = ({ commit }, id: string) => {
   commit(types.CLEAR_ERROR, id)
 }
 
-export const clearErrors = ({ commit }) => {
+export const clearAppErrors = ({ commit }) => {
   commit(types.CLEAR_ERRORS)
 }

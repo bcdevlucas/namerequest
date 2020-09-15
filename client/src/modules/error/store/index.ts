@@ -5,7 +5,7 @@ import mutations from './mutations'
 export const STATE_KEY = 'errors'
 
 const state = {
-  [STATE_KEY]: new Map()
+  [STATE_KEY]: []
 }
 
 export default {
