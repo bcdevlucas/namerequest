@@ -24,8 +24,8 @@
 import Invoice from '@/components/invoice.vue'
 
 import paymentModule from '@/modules/payment'
-import { PaymentResponseI } from '@/modules/payment/services/models'
-import newRequestModule, { NewRequestModule } from '@/store/new-request-module'
+import { NameRequestPaymentResponse } from '@/modules/payment/models'
+import newRequestModule, { NewRequestModule, ROLLBACK_ACTIONS as rollbackActions } from '@/store/new-request-module'
 
 import * as paymentService from '@/modules/payment/services'
 import * as paymentTypes from '@/modules/payment/store/types'
@@ -41,7 +41,7 @@ import { Component, Prop, Vue, Watch } from 'vue-property-decorator'
  *
  * Make sure this is set to false when you're done!
  */
-const DEBUG_RECEIPT = true
+const DEBUG_RECEIPT = false
 
 @Component({
   components: {
@@ -62,7 +62,14 @@ export default class ReceiptModal extends Vue {
     if (sessionPaymentId) {
       // TODO: Remember to clear the session when we're done building this out
       this.fetchData(!DEBUG_RECEIPT)
-        .then(() => this.completePayment(sessionPaymentId))
+        .then(() => {
+          // Check to see if there is a payment
+          const { nr } = this
+          const { payment } = paymentModule
+
+          // Then complete the payment
+          this.completePayment(sessionPaymentId)
+        })
     }
   }
 
@@ -171,7 +178,7 @@ export default class ReceiptModal extends Vue {
   async fetchNrPayment (nrNum, paymentId) {
     const response = await paymentService.getNameRequestPayment(nrNum, paymentId, {})
 
-    const paymentResponse: PaymentResponseI = response.data
+    const paymentResponse: NameRequestPaymentResponse = response.data
     // TODO: Display an error modal HERE if no payment response!
     const { payment, sbcPayment = { invoices: [] }, token, statusCode, completionDate } = paymentResponse
 
@@ -183,20 +190,20 @@ export default class ReceiptModal extends Vue {
 
   async fetchNr (nrNum) {
     await newRequestModule.getNameReservation(nrNum)
-
     // TODO: Display an error modal HERE if no NR response!
   }
 
   async completePayment (paymentId) {
     const { nrNum } = this
-    // TODO: In completePayment, generate a temp UUID that gets passed to the NR Payment API
+
     //  If it is not present in the response...
     const result = await newRequestModule.completePayment(nrNum, paymentId, {})
-    if (result.paymentSuccess) {
-      // TODO: Cancel the NR using the /rollback endpoint
+    if (result.paymentSuccess === false) {
       paymentModule.toggleReceiptModal(true)
     } else {
-      // Display an error modal
+      // TODO: Display an error modal here
+      // Cancel the NR using the /rollback endpoint
+      await newRequestModule.rollbackNameRequest(nrNum, rollbackActions.CANCEL)
     }
   }
 

@@ -1,3 +1,7 @@
+import axios from 'axios'
+import querystring from 'qs'
+import Vue from 'vue'
+import { Action, getModule, Module, Mutation, VuexModule } from 'vuex-module-decorators'
 import {
   AnalysisJSONI,
   ApplicantI,
@@ -20,13 +24,12 @@ import {
   SubmissionTypeT,
   WaitingAddressSearchI
 } from '@/models'
-import { removeExcessSpaces, sanitizeName } from '@/plugins/utilities'
+
 import store from '@/store'
 import { bcMapping, xproMapping, $colinRequestActions } from '@/store/list-data/request-action-mapping'
-import axios from 'axios'
-import querystring from 'qs'
-import Vue from 'vue'
-import { Action, getModule, Module, Mutation, VuexModule } from 'vuex-module-decorators'
+import { removeExcessSpaces, sanitizeName } from '@/plugins/utilities'
+import { NameRequestPayment } from '@/modules/payment/models'
+
 import canadaPostAPIKey from './config'
 import $canJurisdictions, { $mrasJurisdictions } from './list-data/canada-jurisdictions'
 import $designations from './list-data/designations'
@@ -71,11 +74,10 @@ let debouncedCheckCOLIN: any
 
 interface RequestNameMapI extends RequestNameI {}
 
-interface PaymentResponse {
-  payment?: any
-  paymentSuccess: boolean
-  paymentErrors?: any[]
-  statusCode?: string
+export const ROLLBACK_ACTIONS = {
+  CANCEL: 'cancel',
+  RESTORE: 'restore',
+  ROLLBACK_PAYMENT: 'rollback-payment'
 }
 
 @Module({ dynamic: true, namespaced: false, store, name: 'newRequestModule' })
@@ -1370,8 +1372,10 @@ export class NewRequestModule extends VuexModule {
     }
   }
   @Action
-  async completePayment (nrNum): Promise<PaymentResponse> {
-    const paymentResponse: PaymentResponse = {
+  async completePayment (nrNum): Promise<NameRequestPayment> {
+    // TODO: In completePayment, generate a temp UUID or nonce
+    //  that gets passed to the NR Payment API
+    const paymentResponse: NameRequestPayment = {
       paymentSuccess: false
     }
 
@@ -1382,7 +1386,15 @@ export class NewRequestModule extends VuexModule {
         }
       })
 
-      paymentResponse.payment = response.data
+      if (response.status === 200) {
+        paymentResponse.payment = response.data
+        paymentResponse.httpStatusCode = response.status.toString()
+        paymentResponse.paymentSuccess = true
+      } else {
+        paymentResponse.httpStatusCode = response.status.toString()
+        paymentResponse.paymentSuccess = false
+      }
+
       return paymentResponse
     } catch (error) {
       // eslint-disable-next-line
@@ -1391,12 +1403,6 @@ export class NewRequestModule extends VuexModule {
   }
   @Action
   async rollbackNameRequest (nrNum, action): Promise<any> {
-    const ROLLBACK_ACTIONS = {
-      CANCEL: 'cancel',
-      RESTORE: 'restore',
-      ROLLBACK_PAYMENT: 'rollback-payment'
-    }
-
     try {
       const validRollbackActions = [
         ROLLBACK_ACTIONS.CANCEL

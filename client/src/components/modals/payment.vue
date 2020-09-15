@@ -72,7 +72,7 @@
 import FeeSummary from '@/components/fee-summary.vue'
 
 import paymentModule from '@/modules/payment'
-import { PaymentResponseI } from '@/modules/payment/services/models'
+import { NameRequestPaymentResponse } from '@/modules/payment/models'
 import newRequestModule, { NewRequestModule } from '@/store/new-request-module'
 
 import * as paymentService from '@/modules/payment/services'
@@ -165,7 +165,7 @@ export default class PaymentModal extends Vue {
 
     const response = await paymentService.createPaymentRequest(nrNum, req)
 
-    const paymentResponse: PaymentResponseI = response.data
+    const paymentResponse: NameRequestPaymentResponse = response.data
     // TODO: Display an error modal HERE if no payment response!
     const { payment, sbcPayment = { invoices: [] }, token, statusCode, completionDate } = paymentResponse
 
