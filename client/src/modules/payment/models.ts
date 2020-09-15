@@ -1,3 +1,5 @@
+import { ErrorI } from '@/modules/error/store/actions'
+
 export interface NameRequestPaymentResponse {
   id: number
   nrId: string
@@ -11,7 +13,7 @@ export interface NameRequestPaymentResponse {
 export interface NameRequestPayment {
   payment?: any
   paymentSuccess: boolean
-  paymentErrors?: any[]
+  paymentErrors?: ErrorI[]
   statusCode?: string
   httpStatusCode?: string
 }

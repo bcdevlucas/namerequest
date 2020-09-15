@@ -24,8 +24,9 @@
 import Invoice from '@/components/invoice.vue'
 
 import paymentModule from '@/modules/payment'
-import { NameRequestPaymentResponse } from '@/modules/payment/models'
+import { NameRequestPayment, NameRequestPaymentResponse } from '@/modules/payment/models'
 import newRequestModule, { NewRequestModule, ROLLBACK_ACTIONS as rollbackActions } from '@/store/new-request-module'
+import errorModule from '@/modules/error'
 
 import * as paymentService from '@/modules/payment/services'
 import * as paymentTypes from '@/modules/payment/store/types'
@@ -63,7 +64,7 @@ export default class ReceiptModal extends Vue {
       // TODO: Remember to clear the session when we're done building this out
       this.fetchData(!DEBUG_RECEIPT)
         .then(() => {
-          // Check to see if there is a payment
+          // TODO: Check to see if there is a payment
           const { nr } = this
           const { payment } = paymentModule
 
@@ -89,6 +90,9 @@ export default class ReceiptModal extends Vue {
     window.location.href = document.baseURI
   }
 
+  /**
+   * TODO: We still need to switch the NR number for this to work with Oracle enabled
+   */
   async downloadReceipt () {
     const { sessionPaymentId, paymentInvoiceId, paymentRequest } = this
     const {
@@ -196,13 +200,17 @@ export default class ReceiptModal extends Vue {
   async completePayment (paymentId) {
     const { nrNum } = this
 
-    //  If it is not present in the response...
-    const result = await newRequestModule.completePayment(nrNum, paymentId, {})
-    if (result.paymentSuccess === false) {
+    const result: NameRequestPayment = await newRequestModule.completePayment(nrNum, paymentId, {})
+
+    // TODO: This is just for testing take it out!
+    // if (result.paymentSuccess === true) {
+    // eslint-disable-next-line no-constant-condition
+    if (false) {
       paymentModule.toggleReceiptModal(true)
-    } else {
-      // TODO: Display an error modal here
-      // Cancel the NR using the /rollback endpoint
+    } else if (result.paymentSuccess === false && result.paymentErrors) {
+      // Setting the errors to state will update any subscribing components, like the main ErrorModal
+      await errorModule.setErrors(result.paymentErrors)
+      // Cancel the NR using the rollback endpoint
       await newRequestModule.rollbackNameRequest(nrNum, rollbackActions.CANCEL)
     }
   }

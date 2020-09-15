@@ -3,7 +3,7 @@ import * as types from './types'
 import { STATE_KEY } from '../store'
 
 export default {
-  [types.HAS_ERRORS]: (state) => {
+  [types.HAS_ERRORS]: (state): boolean => {
     return state[STATE_KEY] && state[STATE_KEY].length > 0
   },
   [types.GET_ERROR]: (state, errorId: string) => {
