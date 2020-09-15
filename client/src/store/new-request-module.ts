@@ -1402,14 +1402,14 @@ export class NewRequestModule extends VuexModule {
     }
   }
   @Action
-  async rollbackNameRequest (nrNum, action): Promise<any> {
+  async rollbackNameRequest ({ nrNum, action }): Promise<any> {
     try {
       const validRollbackActions = [
         ROLLBACK_ACTIONS.CANCEL
       ]
 
       if (validRollbackActions.indexOf(action) === -1) return
-      const response = await axios.put(`/namerequests/${nrNum}/rollback/${action}`, {}, {
+      const response = await axios.patch(`/namerequests/${nrNum}/rollback/${action}`, {}, {
         headers: {
           'Content-Type': 'application/json'
         }

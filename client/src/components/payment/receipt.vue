@@ -215,7 +215,7 @@ export default class ReceiptModal extends Vue {
       // Setting the errors to state will update any subscribing components, like the main ErrorModal
       await errorModule.setAppErrors(result.paymentErrors)
       // Cancel the NR using the rollback endpoint
-      await newRequestModule.rollbackNameRequest(nrNum, rollbackActions.CANCEL)
+      await newRequestModule.rollbackNameRequest({ nrNum, action: rollbackActions.CANCEL })
     }
   }
 
