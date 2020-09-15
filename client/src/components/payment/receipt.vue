@@ -23,15 +23,18 @@
 <script lang="ts">
 import Invoice from '@/components/invoice.vue'
 
+import { ApiError as PaymentApiError } from '@/modules/payment/services/payment'
 import paymentModule from '@/modules/payment'
 import { NameRequestPayment, NameRequestPaymentResponse } from '@/modules/payment/models'
 import newRequestModule, { NewRequestModule, ROLLBACK_ACTIONS as rollbackActions } from '@/store/new-request-module'
 import errorModule from '@/modules/error'
+import { ErrorI } from '@/modules/error/store/actions'
 
 import * as paymentService from '@/modules/payment/services'
 import * as paymentTypes from '@/modules/payment/store/types'
 
 import { Component, Prop, Vue, Watch } from 'vue-property-decorator'
+import message from "@/components/common/error/message.vue"
 
 /**
  * Makes debugging the receipt easier.
@@ -64,9 +67,8 @@ export default class ReceiptModal extends Vue {
       // TODO: Remember to clear the session when we're done building this out
       this.fetchData(!DEBUG_RECEIPT)
         .then(() => {
-          // TODO: Check to see if there is a payment
           const { nr } = this
-          const { payment } = paymentModule
+          const { payment, sbcPayment } = paymentModule
 
           // Then complete the payment
           this.completePayment(sessionPaymentId)
@@ -159,7 +161,6 @@ export default class ReceiptModal extends Vue {
     const { sessionPaymentId, sessionNrNum } = this
 
     // TODO: We need to make sure we get the correct NR number here? Or somewhere soon...
-
     if (clearSession) {
       // TODO: Remove this one, we don't want to set the payment to session once we're done!
       // TODO: Or... we could add a debug payments mode?
@@ -180,16 +181,19 @@ export default class ReceiptModal extends Vue {
   }
 
   async fetchNrPayment (nrNum, paymentId) {
-    const response = await paymentService.getNameRequestPayment(nrNum, paymentId, {})
+    try {
+      const paymentResponse: NameRequestPaymentResponse = await paymentService.getNameRequestPayment(nrNum, paymentId, {})
+      const { payment, sbcPayment = { invoices: [] }, token, statusCode, completionDate } = paymentResponse
 
-    const paymentResponse: NameRequestPaymentResponse = response.data
-    // TODO: Display an error modal HERE if no payment response!
-    const { payment, sbcPayment = { invoices: [] }, token, statusCode, completionDate } = paymentResponse
-
-    await paymentModule.setPayment(payment)
-    await paymentModule.setPaymentInvoice(sbcPayment.invoices[0])
-
-    // TODO: Display an error modal HERE if no payment response!
+      await paymentModule.setPayment(payment)
+      await paymentModule.setPaymentInvoice(sbcPayment.invoices[0])
+    } catch (error) {
+      if (error instanceof PaymentApiError) {
+        await errorModule.setAppError({ id: 'payment-api-error', error: error.message } as ErrorI)
+      } else {
+        await errorModule.setAppError({ id: 'fetch-nr-payment-error', error: error.message } as ErrorI)
+      }
+    }
   }
 
   async fetchNr (nrNum) {
@@ -201,11 +205,11 @@ export default class ReceiptModal extends Vue {
     const { nrNum } = this
 
     const result: NameRequestPayment = await newRequestModule.completePayment(nrNum, paymentId, {})
-    const paymentSuccess = result.paymentSuccess
+    const paymentSuccess = false // result.paymentSuccess
     // TODO: Remove this when done implementing tests
-    /* result.paymentErrors = [
+    result.paymentErrors = [
       { id: 'payment-error', error: 'Something went wrong with the payment, cancelling the Name Request!' }
-    ] */
+    ]
 
     if (paymentSuccess) {
       paymentModule.toggleReceiptModal(true)

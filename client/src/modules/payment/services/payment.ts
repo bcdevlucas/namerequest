@@ -1,19 +1,32 @@
 import axios, { AxiosResponse, AxiosRequestConfig } from 'axios'
 import store from '@/store/new-request-module'
 
-export async function createPaymentRequest (nrNumber, data): Promise<AxiosResponse<any>> {
+import {
+  NameRequestPayment, NameRequestPaymentResponse
+} from '@/modules/payment/models'
+
+export class ApiError extends Error {}
+
+export async function createPaymentRequest (nrNumber, data): Promise<NameRequestPaymentResponse> {
   const url = `/payments/${nrNumber}`
-  return axios.post(url, data)
+  const response = await axios.post(url, data)
+
+  if (response.status !== 201) {
+    throw new ApiError('Could not retrieve Name Request payment')
+  }
+
+  return response.data
 }
 
-/* export async function completePaymentRequest (nrNumber, data): Promise<AxiosResponse<any>> {
-  const url = `/payments/${nrNumber}`
-  return axios.put(url, data)
-} */
-
-export async function getNameRequestPayment (nrNum, paymentId, params): Promise<AxiosResponse<any>> {
+export async function getNameRequestPayment (nrNum, paymentId, params): Promise<NameRequestPaymentResponse> {
   const url = `/payments/${nrNum}/payment/${paymentId}`
-  return axios.get(url, params)
+  const response = await axios.get(url, params)
+
+  if (response.status !== 200) {
+    throw new ApiError('Could not retrieve Name Request payment')
+  }
+
+  return response.data
 }
 
 export async function getPayment (paymentId, params): Promise<AxiosResponse<any>> {

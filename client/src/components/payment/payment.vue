@@ -86,6 +86,9 @@ import {
 } from "@/models"
 
 import { Component, Prop, Vue, Watch } from 'vue-property-decorator'
+import {ApiError as PaymentApiError} from "@/modules/payment/services"
+import errorModule from "@/modules/error"
+import {ErrorI} from "@/modules/error/store/actions"
 
 @Component({
   components: {
@@ -163,41 +166,46 @@ export default class PaymentModal extends Vue {
       }
     }
 
-    const response = await paymentService.createPaymentRequest(nrNum, req)
+    try {
+      const paymentResponse: NameRequestPaymentResponse = await paymentService.createPaymentRequest(nrNum, req)
+      const { payment, sbcPayment = { invoices: [] }, token, statusCode, completionDate } = paymentResponse
 
-    const paymentResponse: NameRequestPaymentResponse = response.data
-    // TODO: Display an error modal HERE if no payment response!
-    const { payment, sbcPayment = { invoices: [] }, token, statusCode, completionDate } = paymentResponse
+      await paymentModule.setPayment(payment)
+      await paymentModule.setPaymentInvoice(sbcPayment.invoices[0])
+      await paymentModule.setPaymentRequest(req)
 
-    await paymentModule.setPayment(payment)
-    await paymentModule.setPaymentInvoice(sbcPayment.invoices[0])
-    await paymentModule.setPaymentRequest(req)
+      // Grab the new payment ID
+      const { paymentId } = this
 
-    // Grab the new payment ID
-    const { paymentId } = this
+      // TODO: Remove this one, we don't want to set the payment to session once we're done!
+      // TODO: Or... we could add a debug payments mode?
+      sessionStorage.setItem('payment', `${JSON.stringify(payment)}`)
+      // Store the payment ID to sessionStorage, that way we can start the user back where we left off
+      sessionStorage.setItem('paymentInProgress', 'true')
+      sessionStorage.setItem('paymentId', `${paymentId}`)
+      sessionStorage.setItem('paymentToken', `${token}`)
+      sessionStorage.setItem('nrNum', `${nrNum}`)
 
-    // TODO: Remove this one, we don't want to set the payment to session once we're done!
-    // TODO: Or... we could add a debug payments mode?
-    sessionStorage.setItem('payment', `${JSON.stringify(payment)}`)
-    // Store the payment ID to sessionStorage, that way we can start the user back where we left off
-    sessionStorage.setItem('paymentInProgress', 'true')
-    sessionStorage.setItem('paymentId', `${paymentId}`)
-    sessionStorage.setItem('paymentToken', `${token}`)
-    sessionStorage.setItem('nrNum', `${nrNum}`)
+      // Redirect user to Service BC Pay Portal
+      // Set the redirect URL to specify OUR payment ID so we can
+      // grab the payment when we're directed back to our application
+      const redirectUrl = encodeURIComponent(
+        `${document.baseURI}/?paymentId=${paymentId}`
+      )
 
-    // Redirect user to Service BC Pay Portal
-    // Set the redirect URL to specify OUR payment ID so we can
-    // grab the payment when we're directed back to our application
-    const redirectUrl = encodeURIComponent(
-      `${document.baseURI}/?paymentId=${paymentId}`
-    )
+      // eslint-disable-next-line no-console
+      console.log(`Forwarding to SBC Payment Portal -> Payment redirect URL: ${redirectUrl}`)
 
-    // eslint-disable-next-line no-console
-    console.log(`Forwarding to SBC Payment Portal -> Payment redirect URL: ${redirectUrl}`)
-
-    // TODO: We could make this string configurable too... not necessary at this time
-    const paymentPortalUrl = `${this.$PAYMENT_PORTAL_URL}/${token}/${redirectUrl}`
-    window.location.href = paymentPortalUrl
+      // TODO: We could make this string configurable too... not necessary at this time
+      const paymentPortalUrl = `${this.$PAYMENT_PORTAL_URL}/${token}/${redirectUrl}`
+      window.location.href = paymentPortalUrl
+    } catch (error) {
+      if (error instanceof PaymentApiError) {
+        await errorModule.setAppError({ id: 'payment-api-error', error: error.message } as ErrorI)
+      } else {
+        await errorModule.setAppError({ id: 'create-payment-error', error: error.message } as ErrorI)
+      }
+    }
   }
 
   get applicant (): Partial<ApplicantI> | undefined {
