@@ -241,7 +241,7 @@ export default class ReceiptModal extends Vue {
     const response = await paymentService.getInvoiceRequest(paymentIdentifier, {
       'invoice_id': invoiceId
     })
-    await paymentModule.setPaymentInvoice(response.data)
+    await paymentModule.setPaymentInvoice(response)
   }
 
   /**
@@ -252,7 +252,7 @@ export default class ReceiptModal extends Vue {
    */
   async fetchReceipt (paymentIdentifier, invoiceId) {
     const response = await paymentService.getReceiptRequest(paymentIdentifier, invoiceId, {})
-    await paymentModule.setPaymentReceipt(response.data)
+    await paymentModule.setPaymentReceipt(response)
   }
 
   /**
@@ -264,7 +264,7 @@ export default class ReceiptModal extends Vue {
   async fetchReceiptPdf (paymentIdentifier, invoiceId, data) {
     try {
       const response = await paymentService.getReceiptRequest(paymentIdentifier, invoiceId, data)
-      const url = window.URL.createObjectURL(new Blob([response.data]))
+      const url = window.URL.createObjectURL(new Blob([response]))
       const link = document.createElement('a')
       link.href = url
       link.setAttribute('download', `payment-invoice-${invoiceId}.pdf`)

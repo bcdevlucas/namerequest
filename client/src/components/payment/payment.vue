@@ -132,7 +132,7 @@ export default class PaymentModal extends Vue {
         'date': new Date().toISOString(),
         'priority': this.priorityRequest || false
       })
-      await paymentModule.setPaymentFees(response.data)
+      await paymentModule.setPaymentFees(response)
     } catch (error) {
       if (error instanceof PaymentApiError) {
         await errorModule.setAppError({ id: 'payment-api-error', error: error.message } as ErrorI)

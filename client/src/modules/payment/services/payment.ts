@@ -57,7 +57,7 @@ export async function getPaymentFees (params): Promise<any> {
   const url = `/payments/fees`
   let response: AxiosResponse
   try {
-    response = await axios.get(url, params)
+    response = await axios.post(url, params)
     return response.data
   } catch (err) {
     handleApiError(err, 'Could not retrieve Name Request payment fees')
