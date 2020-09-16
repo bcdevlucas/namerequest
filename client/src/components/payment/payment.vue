@@ -122,16 +122,24 @@ export default class PaymentModal extends Vue {
    * This uses snake_case GET params
    */
   async fetchFees () {
-    const corpType = 'NRO' // We may need to handle more than one type at some point?
+    try {
+      const corpType = 'NRO' // We may need to handle more than one type at some point?
 
-    const response = await paymentService.getPaymentFees({
-      'corp_type': corpType,
-      'filing_type_code': this.filingType,
-      'jurisdiction': jurisdictions.BC,
-      'date': new Date().toISOString(),
-      'priority': this.priorityRequest || false
-    })
-    await paymentModule.setPaymentFees(response.data)
+      const response = await paymentService.getPaymentFees({
+        'corp_type': corpType,
+        'filing_type_code': this.filingType,
+        'jurisdiction': jurisdictions.BC,
+        'date': new Date().toISOString(),
+        'priority': this.priorityRequest || false
+      })
+      await paymentModule.setPaymentFees(response.data)
+    } catch (error) {
+      if (error instanceof PaymentApiError) {
+        await errorModule.setAppError({ id: 'payment-api-error', error: error.message } as ErrorI)
+      } else {
+        await errorModule.setAppError({ id: 'fetch-fees-error', error: error.message } as ErrorI)
+      }
+    }
   }
 
   async createPayment () {

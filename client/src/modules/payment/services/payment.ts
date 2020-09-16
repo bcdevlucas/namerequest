@@ -1,4 +1,4 @@
-import axios, { AxiosResponse, AxiosRequestConfig } from 'axios'
+import axios, { AxiosResponse, AxiosError, AxiosRequestConfig } from 'axios'
 
 import {
   NameRequestPayment, NameRequestPaymentResponse
@@ -6,80 +6,94 @@ import {
 
 export class PaymentApiError extends Error {}
 
+function isAxiosError (err: AxiosError | Error): err is AxiosError {
+  return (err as AxiosError).isAxiosError !== undefined
+}
+
+function handleApiError (err, defaultMessage = '') {
+  if (isAxiosError(err)) {
+    const { message } = err.response.data
+    throw new PaymentApiError(message)
+  } else {
+    const { message } = err
+    throw new PaymentApiError(message || defaultMessage)
+  }
+}
+
 export async function createPaymentRequest (nrId, data): Promise<NameRequestPaymentResponse> {
   const url = `/payments/${nrId}`
-  const response = await axios.post(url, data)
-
-  if (response.status !== 201) {
-    throw new PaymentApiError('Could not create Name Request payment')
+  let response: AxiosResponse
+  try {
+    response = await axios.post(url, data)
+    return response.data
+  } catch (err) {
+    handleApiError(err, 'Could not create Name Request payment')
   }
-
-  return response.data
 }
 
 export async function getNameRequestPayment (nrId, paymentId, params): Promise<NameRequestPaymentResponse> {
   const url = `/payments/${nrId}/payment/${paymentId}`
-  const response = await axios.get(url, params)
-
-  if (response.status !== 200) {
-    throw new PaymentApiError('Could not retrieve Name Request payment')
+  let response: AxiosResponse
+  try {
+    response = await axios.get(url, params)
+    return response.data
+  } catch (err) {
+    handleApiError(err, 'Could not retrieve Name Request payment')
   }
-
-  return response.data
 }
 
 export async function getPayment (paymentId, params): Promise<any> {
   const url = `/payments/${paymentId}`
-  const response = await axios.get(url, params)
-
-  if (response.status !== 200) {
-    throw new PaymentApiError('Could not retrieve Service BC payment')
+  let response: AxiosResponse
+  try {
+    response = await axios.get(url, params)
+    return response.data
+  } catch (err) {
+    handleApiError(err, 'Could not create Service BC payment')
   }
-
-  return response.data
 }
 
 export async function getPaymentFees (params): Promise<any> {
   const url = `/payments/fees`
-  const response = await axios.post(url, params)
-
-  if (response.status !== 200) {
-    throw new PaymentApiError('Could not retrieve Service BC payment fees')
+  let response: AxiosResponse
+  try {
+    response = await axios.get(url, params)
+    return response.data
+  } catch (err) {
+    handleApiError(err, 'Could not retrieve Name Request payment fees')
   }
-
-  return response.data
 }
 
 export async function getInvoiceRequest (paymentId, params): Promise<any> {
   const url = `/payments/${paymentId}/invoice`
-  const response = await axios.get(url, params)
-
-  if (response.status !== 200) {
-    throw new PaymentApiError('Could not retrieve Service BC payment invoice')
+  let response: AxiosResponse
+  try {
+    response = await axios.get(url, params)
+    return response.data
+  } catch (err) {
+    handleApiError(err, 'Could not retrieve Name Request payment invoice')
   }
-
-  return response.data
 }
 
 export async function getInvoicesRequest (paymentId, params): Promise<any> {
   const url = `/payments/${paymentId}/invoices`
-  const response = await axios.get(url, params)
-
-  if (response.status !== 200) {
-    throw new PaymentApiError('Could not retrieve Service BC payment invoices')
+  let response: AxiosResponse
+  try {
+    response = await axios.get(url, params)
+    return response.data
+  } catch (err) {
+    handleApiError(err, 'Could not retrieve Name Request payment invoices')
   }
-
-  return response.data
 }
 
 export async function getReceiptRequest (paymentId, invoiceId, data): Promise<any> {
   const params = { responseType: 'blob' } as AxiosRequestConfig
   const url = `/payments/${paymentId}/receipt`
-  const response = await axios.post(url, data, params)
-
-  if (response.status !== 200) {
-    throw new PaymentApiError('Could not retrieve Service BC payment receipt')
+  let response: AxiosResponse
+  try {
+    response = await axios.post(url, data, params)
+    return response.data
+  } catch (err) {
+    handleApiError(err, 'Could not retrieve Name Request payment receipt')
   }
-
-  return response.data
 }
