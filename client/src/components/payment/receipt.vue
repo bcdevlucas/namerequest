@@ -274,14 +274,6 @@ export default class ReceiptModal extends Vue {
       if (error instanceof PaymentApiError) {
         await errorModule.setAppError({ id: 'fetch-receipt-pdf-api-error', error: error.message } as ErrorI)
       } else {
-        if (error && error.response && error.response.data instanceof Blob) {
-          const errorText = await error.response.data.text()
-          const errorJson = JSON.parse(errorText)
-          if (errorJson && errorJson.message) {
-            error.message = errorJson.message
-          }
-        }
-
         await errorModule.setAppError({ id: 'fetch-receipt-pdf-error', error: error.message } as ErrorI)
       }
     }
