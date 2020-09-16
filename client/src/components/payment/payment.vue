@@ -86,7 +86,7 @@ import {
 } from '@/models'
 
 import { Component, Prop, Vue, Watch } from 'vue-property-decorator'
-import { ApiError as PaymentApiError } from '@/modules/payment/services'
+import { PaymentApiError } from '@/modules/payment/services'
 import errorModule from '@/modules/error'
 import { ErrorI } from '@/modules/error/store/actions'
 

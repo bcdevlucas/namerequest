@@ -35,6 +35,10 @@ import $canJurisdictions, { $mrasJurisdictions } from './list-data/canada-jurisd
 import $designations from './list-data/designations'
 import $intJurisdictions from './list-data/intl-jurisdictions'
 
+import errorModule from '@/modules/error'
+import { ErrorI } from '@/modules/error/store/actions'
+export class ApiError extends Error {}
+
 const qs: any = querystring
 const debounce = require('lodash/debounce')
 let source: any
@@ -1281,15 +1285,25 @@ export class NewRequestModule extends VuexModule {
       let { nrId } = this
       // Use the NR_REGEX const in existing-request-search if you really want to do this
       // nrNum = nrNum.replace(/(?:\s+|\s|)(\D|\D+|)(?:\s+|\s|)(\d+)(?:\s+|\s|)/, 'NR' + '$2')
-
-      let response = await axios.patch(`/namerequests/${nrId}/edit`, nr, {
+      const response = await axios.patch(`/namerequests/${nrId}/edit`, nr, {
         headers: {
           'Content-Type': 'application/json'
         }
       })
+
+      if (response.status !== 200) {
+        throw new ApiError('Could not update the name request')
+      }
+
       this.mutateNameRequest(response.data)
       this.mutateDisplayedComponent('Success')
     } catch (error) {
+      if (error instanceof ApiError) {
+        await errorModule.setAppError({ id: 'patch-name-requests-api-error', error: error.message } as ErrorI)
+      } else {
+        await errorModule.setAppError({ id: 'patch-name-requests-error', error: error.message } as ErrorI)
+      }
+
       // eslint-disable-next-line
       console.log(error)
     }
@@ -1298,21 +1312,31 @@ export class NewRequestModule extends VuexModule {
   async patchNameRequestsByAction (action) {
     try {
       const { nrId } = this
-      let response = await axios.patch(`/namerequests/${nrId}/${action}`, {}, {
+      const response = await axios.patch(`/namerequests/${nrId}/${action}`, {}, {
         headers: {
           'Content-Type': 'application/json'
         }
       })
+
+      if (response.status !== 200) {
+        throw new ApiError('Could not update the name request')
+      }
+
       this.mutateNameRequest(response.data)
       this.mutateDisplayedComponent('Success')
     } catch (error) {
+      if (error instanceof ApiError) {
+        await errorModule.setAppError({ id: 'patch-name-requests-by-action-api-error', error: error.message } as ErrorI)
+      } else {
+        await errorModule.setAppError({ id: 'patch-name-requests-by-action-error', error: error.message } as ErrorI)
+      }
+
       // eslint-disable-next-line
       console.log(error)
     }
   }
   @Action
   async postNameRequests (type: string) {
-    let response
     if (this.isAssumedName) type = 'assumed'
     try {
       let data: any
@@ -1332,14 +1356,24 @@ export class NewRequestModule extends VuexModule {
         data['corpNum'] = this.corpNum
       }
 
-      response = await axios.post(`/namerequests`, data, {
+      const response = await axios.post(`/namerequests`, data, {
         headers: {
           'Content-Type': 'application/json'
         }
       })
 
+      if (response.status !== 201) {
+        throw new ApiError('Could not create the name request')
+      }
+
       this.setNrResponse(response.data)
     } catch (error) {
+      if (error instanceof ApiError) {
+        await errorModule.setAppError({ id: 'post-name-requests-api-error', error: error.message } as ErrorI)
+      } else {
+        await errorModule.setAppError({ id: 'post-name-requests-error', error: error.message } as ErrorI)
+      }
+
       // eslint-disable-next-line
       console.log(error)
     }
@@ -1368,14 +1402,25 @@ export class NewRequestModule extends VuexModule {
       if (this.showCorpNum && this.corpNum) {
         data['corpNum'] = this.corpNum
       }
-      response = await axios.put(`/namerequests/${nrId}`, data, {
+
+      const response = await axios.put(`/namerequests/${nrId}`, data, {
         headers: {
           'Content-Type': 'application/json'
         }
       })
 
+      if (response.status !== 200) {
+        throw new ApiError('Could not update the name request')
+      }
+
       this.setNrResponse(response.data)
     } catch (error) {
+      if (error instanceof ApiError) {
+        await errorModule.setAppError({ id: 'put-name-requests-api-error', error: error.message } as ErrorI)
+      } else {
+        await errorModule.setAppError({ id: 'put-name-requests-error', error: error.message } as ErrorI)
+      }
+
       // eslint-disable-next-line
       console.log(error)
     }
@@ -1423,9 +1468,19 @@ export class NewRequestModule extends VuexModule {
           'Content-Type': 'application/json'
         }
       })
+
+      if (response.status !== 200) {
+        throw new ApiError('Could not roll back / cancel the name request')
+      }
     } catch (error) {
+      if (error instanceof ApiError) {
+        await errorModule.setAppError({ id: 'rollback-name-request-api-error', error: error.message } as ErrorI)
+      } else {
+        await errorModule.setAppError({ id: 'rollback-name-request-error', error: error.message } as ErrorI)
+      }
+
       // eslint-disable-next-line
-      throw new Error('Error rolling back Name Request')
+      console.log(error)
     }
   }
   @Action

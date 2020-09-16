@@ -23,7 +23,7 @@
 <script lang="ts">
 import Invoice from '@/components/invoice.vue'
 
-import { ApiError as PaymentApiError } from '@/modules/payment/services/payment'
+import { PaymentApiError } from '@/modules/payment/services/payment'
 import paymentModule from '@/modules/payment'
 import { NameRequestPayment, NameRequestPaymentResponse } from '@/modules/payment/models'
 import newRequestModule, { NewRequestModule, ROLLBACK_ACTIONS as rollbackActions } from '@/store/new-request-module'
@@ -97,7 +97,7 @@ export default class ReceiptModal extends Vue {
    * TODO: We still need to switch the NR number for this to work with Oracle enabled
    */
   async downloadReceipt () {
-    const { sessionPaymentId, paymentInvoiceId, paymentRequest } = this
+    const { paymentToken, paymentInvoiceId, paymentRequest } = this
     const {
       businessInfo = { businessName: null, businessIdentifier: null }, filingInfo = { date: null }
     } = paymentRequest
@@ -111,7 +111,7 @@ export default class ReceiptModal extends Vue {
       'filingDateTime': filingInfo.date // TODO: Is this a date or a datetime?
     }
 
-    await this.fetchReceiptPdf(sessionPaymentId, paymentInvoiceId, data)
+    await this.fetchReceiptPdf(paymentToken, paymentInvoiceId, data)
   }
 
   get nr () {
@@ -122,6 +122,10 @@ export default class ReceiptModal extends Vue {
 
   get nrId () {
     return newRequestModule.nrId
+  }
+
+  get paymentToken () {
+    return paymentModule[paymentTypes.GET_PAYMENT_TOKEN]
   }
 
   get paymentRequest () {
@@ -135,6 +139,12 @@ export default class ReceiptModal extends Vue {
   get sessionPaymentId () {
     return (this.paymentInProgress && sessionStorage.getItem('paymentId'))
       ? parseInt(sessionStorage.getItem('paymentId'))
+      : undefined
+  }
+
+  get sessionPaymentToken () {
+    return (this.paymentInProgress && sessionStorage.getItem('paymentToken'))
+      ? sessionStorage.getItem('paymentToken')
       : undefined
   }
 
@@ -224,11 +234,11 @@ export default class ReceiptModal extends Vue {
 
   /**
    * Not currently in use... but might be useful later
-   * @param paymentId
+   * @param paymentIdentifier
    * @param invoiceId
    */
-  async fetchInvoice (paymentId, invoiceId) {
-    const response = await paymentService.getInvoiceRequest(paymentId, {
+  async fetchInvoice (paymentIdentifier, invoiceId) {
+    const response = await paymentService.getInvoiceRequest(paymentIdentifier, {
       'invoice_id': invoiceId
     })
     await paymentModule.setPaymentInvoice(response.data)
@@ -237,29 +247,44 @@ export default class ReceiptModal extends Vue {
   /**
    * Not currently in use... right now receipt data isn't exposed anywhere,
    * there's just the PDF option in the Service BC Pay API
-   * @param paymentId
+   * @param paymentIdentifier
    * @param invoiceId
    */
-  async fetchReceipt (paymentId, invoiceId) {
-    const response = await paymentService.getReceiptRequest(paymentId, invoiceId, {})
+  async fetchReceipt (paymentIdentifier, invoiceId) {
+    const response = await paymentService.getReceiptRequest(paymentIdentifier, invoiceId, {})
     await paymentModule.setPaymentReceipt(response.data)
   }
 
   /**
    * Grab the receipt PDF and download / display it for the user...
-   * @param paymentId
+   * @param paymentIdentifier
    * @param invoiceId
    * @param data
    */
-  async fetchReceiptPdf (paymentId, invoiceId, data) {
-    const response = await paymentService.getReceiptRequest(paymentId, invoiceId, data)
-    // eslint-disable-next-line no-console
-    const url = window.URL.createObjectURL(new Blob([response.data]))
-    const link = document.createElement('a')
-    link.href = url
-    link.setAttribute('download', `payment-invoice-${invoiceId}.pdf`)
-    document.body.appendChild(link)
-    link.click()
+  async fetchReceiptPdf (paymentIdentifier, invoiceId, data) {
+    try {
+      const response = await paymentService.getReceiptRequest(paymentIdentifier, invoiceId, data)
+      const url = window.URL.createObjectURL(new Blob([response.data]))
+      const link = document.createElement('a')
+      link.href = url
+      link.setAttribute('download', `payment-invoice-${invoiceId}.pdf`)
+      document.body.appendChild(link)
+      link.click()
+    } catch (error) {
+      if (error instanceof PaymentApiError) {
+        await errorModule.setAppError({ id: 'fetch-receipt-pdf-api-error', error: error.message } as ErrorI)
+      } else {
+        if (error && error.response && error.response.data instanceof Blob) {
+          const errorText = await error.response.data.text()
+          const errorJson = JSON.parse(errorText)
+          if (errorJson && errorJson.message) {
+            error.message = errorJson.message
+          }
+        }
+
+        await errorModule.setAppError({ id: 'fetch-receipt-pdf-error', error: error.message } as ErrorI)
+      }
+    }
   }
 }
 </script>
